@@ -32,8 +32,7 @@ struct TrialRecord {
   int trial_number;
   int first_pull_id;
   int rewarded;
-  int task_type; // indicate the task type and different cue color (maybe beep sounds too): 0 no reward; 1 - self; 2 - altruistic (not built yet); 3 - cooperative (not built yet); 4  - for training (one reward for each animal in the cue on period)
-  float pulltime_thres; // the time window threshold for the cooperation pulling
+  int task_type; // indicate the task type 
 };
 
 struct BehaviorData {
@@ -46,22 +45,14 @@ struct SessionInfo {
   std::string lever1_animal;
   std::string lever2_animal;
   std::string experiment_date;
-  float init_force;
-  float high_force;
   int task_type;
-  float pulltime_thres;
 };
 
 struct LeverReadout {
   int trial_number;
   double readout_timepoint;
-  //float strain_gauge_lever1;
-  //float strain_gauge_lever2;
-  //float potentiometer_lever1;
-  //float potentiometer_lever2;
   float strain_gauge_lever;
   float potentiometer_lever;
-  int lever_id;
   int pull_or_release;
 
 }; // under construction ... -WS
@@ -87,43 +78,38 @@ struct App : public om::App {
 
   // file name
 
-  std::string lever1_animal{ "Sparkle" };
-  std::string lever2_animal{ "Artemis" };
+  std::string animal1_name{ "Sparkle" };
+  std::string animal2_name{ "Artemis" };
 
   std::string experiment_date{ "20230117" };
 
-  //std::string trialrecords_name = experiment_date + "_" + lever1_animal + "_" + lever2_animal + "_TrialRecord_1.json" ;
-  //std::string bhvdata_name = experiment_date + "_" + lever1_animal + "_" + lever2_animal + "_bhv_data_1.json" ;
-  //std::string sessioninfo_name = experiment_date + "_" + lever1_animal + "_" + lever2_animal + "_session_info_1.json";
-  //std::string leverread_name = experiment_date + "_" + lever1_animal + "_" + lever2_animal + "_lever_reading_1.json";
 
-  int tasktype{ 1 }; // indicate the task type and different cue color: 0 no reward; 1 - self; 2 - altruistic; 3 - cooperative; 4  - for training
-  // int tasktype{rand()%2}; // indicate the task type and different cue color: 0 no reward; 1 - self; 2 - altruistic; 3 - cooperative; 4  - for training 
-  // int tasktype{ rand()%4}; // indicate the task type and different cue color: 0 no reward; 1 - self; 2 - altruistic; 3 - cooperative; 4  - for training 
+  int tasktype{ 1 }; 
+  // int tasktype{rand()%2};
 
   // lever force setting condition
-  bool allow_auto_lever_force_set{true}; // true, if use force as below; false, if manually select force level on the GUI. - WS
-  float normalforce{ 100.0f }; // 130
-  float releaseforce{ 350.0f }; // 350
+  // bool allow_auto_lever_force_set{true}; // true, if use force as below; false, if manually select force level on the GUI. - WS
+  // float normalforce{ 100.0f }; // 130
+  // float releaseforce{ 350.0f }; // 350
 
   bool allow_automated_juice_delivery{false};
 
-  int lever_force_limits[2]{0, 550};
-  om::lever::PullDetect detect_pull[2]{};
-  // float lever_position_limits[2]{25e3f, 33e3f};
-  // float lever_position_limits[4]{ 64.5e3f, 65e3f, 14e2f, 55e2f}; // lever 1 and lever 2 have different potentiometer ranges - WS 
-  // float lever_position_limits[4]{ 63.7e3f, 65.3e3f, 12e2f, 59e2f }; // lever 1 and lever 2 have different potentiometer ranges - WS 
-  float lever_position_limits[4]{ 42.4e3f, 48.2e3f, 12.5e2f, 70e2f }; // lever 1 and lever 2 have different potentiometer ranges - WS 
-  bool invert_lever_position[2]{true, false};
+  // int lever_force_limits[2]{0, 550};
+  om::lever::PullDetect detect_pull[2]{}; // one lever, but treat the two directions as two levers
+  float lever_position_limits[4]{ 32e3f, 27.5e3f, 32e2f, 36.5e2f };  // one lever, but treat the two directions as two levers
+  bool invert_lever_position[2]{true, false}; // one lever, but treat the two directions as two levers
   
+
   //float new_delay_time{2.0f};
   double new_delay_time{om::urand()*4+3}; //random delay between 3 to 5 s (in unit of second)
   int juice_delay_time{ 1000 }; // from successful pulling to juice delivery (in unit of minisecond)
+
 
   // session threshold
   float new_total_time{ 3600.0f }; // the time for the session (in unit of second)
   // float new_total_time{ 15.0f }; // the time for the maximal trial time - only used for mutual cooperation condition (task type == 3)
   int total_trial_number{ 500 }; // the maximal trial number of a session
+
 
   // variables that are updated every trial
   int trialnumber{ 0 };
@@ -133,6 +119,7 @@ struct App : public om::App {
   om::TimePoint first_pull_time{}; 
   double other_pull_time{}; // time gap bwtween two pulls
 
+
   double timepoint{};
   om::TimePoint trialstart_time;
   double trial_start_time_forsave;
@@ -141,8 +128,8 @@ struct App : public om::App {
 
 
   bool leverpulled[2]{ false, false };
-  float leverpulledtime[2]{ 0,0 };  //mostly for the cooperative condition (taskytype = 3)
-  float pulledtime_thres{ 1.0f }; // time difference that two animals has to pull the lever 
+  float leverpulledtime[2]{ 0,0 };  
+
 
   // initiate auditory cues
   std::optional<om::audio::BufferHandle> debug_audio_buffer;
@@ -184,7 +171,6 @@ json to_json(const TrialRecord& trial) {
   result["first_pull_id"] = trial.first_pull_id;
   result["task_type"] = trial.task_type;
   result["trial_starttime"] = trial.trial_start_time_stamp;
-  result["pulltime_thres"] = trial.pulltime_thres;
   return result;
 }
 
@@ -220,11 +206,8 @@ json to_json(const SessionInfo& session_info) {
   json result;
   result["lever1_animal"] = session_info.lever1_animal;
   result["lever2_animal"] = session_info.lever2_animal;
-  result["levers_initial_force"] = session_info.init_force;
-  result["levers_increased_force"] = session_info.high_force;
   result["experiment_date"] = session_info.experiment_date;
   result["task_type"] = session_info.task_type;
-  result["pulltime_thres"] = session_info.pulltime_thres;
   return result;
 }
 
@@ -241,13 +224,8 @@ json to_json(const LeverReadout& lever_reading) {
   json result;
   result["trial_number"] = lever_reading.trial_number;
   result["readout_timepoint"] = lever_reading.readout_timepoint;
-  //result["potentiometer_lever1"] = lever_reading.potentiometer_lever1;
-  //result["potentiometer_lever2"] = lever_reading.potentiometer_lever2;
-  //result["potentiometer_lever1"] = lever_reading.strain_gauge_lever1;
-  //result["potentiometer_lever2"] = lever_reading.strain_gauge_lever1;
   result["potentiometer_lever2"] = lever_reading.potentiometer_lever;
   result["potentiometer_lever1"] = lever_reading.strain_gauge_lever;
-  result["lever_id"] = lever_reading.lever_id;
   result["pull_or_release"] = lever_reading.pull_or_release;
   return result;
 }
@@ -264,32 +242,10 @@ json to_json(const std::vector<LeverReadout>& lever_reads) {
 void setup(App& app) {
 
   
-  //auto buff_p = std::string{OM_RES_DIR} + "/sounds/piano-c.wav";
-  //app.debug_audio_buffer = om::audio::read_buffer(buff_p.c_str());
-  if (app.tasktype == 0) {
-    auto buff_p = std::string{ OM_RES_DIR } + "/sounds/start_trial_beep.wav";
-    app.start_trial_audio_buffer = om::audio::read_buffer(buff_p.c_str());
-    auto debug_image_p = std::string{ OM_RES_DIR } + "/images/calla_leaves.png";
-    app.debug_image = om::gfx::read_2d_image(debug_image_p.c_str());
-  }
-  else if (app.tasktype == 1 || app.tasktype == 4) {
-    auto buff_p = std::string{ OM_RES_DIR } + "/sounds/start_trial_beep.wav";
-    app.start_trial_audio_buffer = om::audio::read_buffer(buff_p.c_str());
-    // auto debug_image_p = std::string{ OM_RES_DIR } + "/images/calla_leaves.png";
-    // app.debug_image = om::gfx::read_2d_image(debug_image_p.c_str());
-  }
-  else if (app.tasktype == 2) {
-    auto buff_p = std::string{ OM_RES_DIR } + "/sounds/start_trial_beep.wav";
-    app.start_trial_audio_buffer = om::audio::read_buffer(buff_p.c_str());
-    auto debug_image_p = std::string{ OM_RES_DIR } + "/images/blue_triangle.png";
-    app.debug_image = om::gfx::read_2d_image(debug_image_p.c_str());
-  }
-  else if (app.tasktype == 3) {
-    auto buff_p = std::string{ OM_RES_DIR } + "/sounds/start_trial_beep.wav";
-    app.start_trial_audio_buffer = om::audio::read_buffer(buff_p.c_str());
-    auto debug_image_p = std::string{ OM_RES_DIR } + "/images/yellow_circle.png";
-    app.debug_image = om::gfx::read_2d_image(debug_image_p.c_str());
-  }
+  auto buff_p = std::string{ OM_RES_DIR } + "/sounds/start_trial_beep.wav";
+  app.start_trial_audio_buffer = om::audio::read_buffer(buff_p.c_str());
+
+  
   auto buff_p1 = std::string{ OM_RES_DIR } + "/sounds/successful_beep.wav";
   app.sucessful_pull_audio_buffer = om::audio::read_buffer(buff_p1.c_str());
 
@@ -303,12 +259,6 @@ void setup(App& app) {
   app.detect_pull[1].rising_edge = dflt_rising_edge;
   app.detect_pull[0].falling_edge = dflt_falling_edge;
   app.detect_pull[1].falling_edge = dflt_falling_edge;
-
-  // initialize lever force
-  if (app.allow_auto_lever_force_set) {
-    om::lever::set_force(om::lever::get_global_lever_system(), app.levers[0], app.normalforce);
-    om::lever::set_force(om::lever::get_global_lever_system(), app.levers[1], app.normalforce);
-  }
 
  
 }
