@@ -1,6 +1,6 @@
 #include "lever_pull.hpp"
 
-namespace om::lever {
+namespace ws::lever {
 
   PullDetectResult detect_pull(PullDetect* pd, const PullDetectParams& params) {
     PullDetectResult result{};

@@ -10,7 +10,7 @@
 #include <optional>
 #include <iostream>
 
-namespace om::gfx {
+namespace ws::gfx {
 
 namespace {
 

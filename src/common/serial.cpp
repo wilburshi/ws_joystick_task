@@ -1,7 +1,7 @@
 #include "serial.hpp"
 #include <cstdio>
 
-namespace om {
+namespace ws {
 
 std::vector<PortDescriptor> enumerate_ports() {
   std::vector<PortDescriptor> result;

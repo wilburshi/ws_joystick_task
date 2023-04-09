@@ -4,10 +4,10 @@
 #include <cstdint>
 #include <optional>
 
-namespace om::audio {
+namespace ws::audio {
 
 struct BufferHandle {
-  OM_INTEGER_IDENTIFIER_EQUALITY(BufferHandle, id)
+  WS_INTEGER_IDENTIFIER_EQUALITY(BufferHandle, id)
   uint32_t id;
 };
 

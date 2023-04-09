@@ -1,7 +1,7 @@
 cmake_minimum_required(VERSION 3.5 FATAL_ERROR)
 set(CMAKE_CXX_STANDARD 17)
 
-project(om)
+project(ws)
 add_library(${PROJECT_NAME} STATIC)
 
 function(configure_compiler_flags project)
@@ -41,7 +41,7 @@ target_sources(${PROJECT_NAME} PUBLIC
         ${CMAKE_SOURCE_DIR}/src/common/lever_system.cpp
         ${CMAKE_SOURCE_DIR}/src/common/lever_pull.hpp
         ${CMAKE_SOURCE_DIR}/src/common/lever_pull.cpp
-        ${CMAKE_SOURCE_DIR}/src/common/om.hpp
+        ${CMAKE_SOURCE_DIR}/src/common/ws.hpp
         ${CMAKE_SOURCE_DIR}/src/common/lever_gui.hpp
         ${CMAKE_SOURCE_DIR}/src/common/lever_gui.cpp
         ${CMAKE_SOURCE_DIR}/src/common/glfw.hpp

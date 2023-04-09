@@ -4,7 +4,7 @@
 #include <cassert>
 #include <thread>
 
-namespace om {
+namespace ws {
 
 namespace lever {
 
@@ -135,8 +135,8 @@ bool process_remote_message(LeverSystem::RemoteInstance& remote, LeverMessageDat
     case LeverMessageType::OpenPort: {
       assert(!remote.open_response);
       remote = {};
-      auto serial_res = om::make_context(
-        data.port, om::default_baud_rate(), om::default_read_write_timeout());
+      auto serial_res = ws::make_context(
+        data.port, ws::default_baud_rate(), ws::default_read_write_timeout());
 #if 0
       std::this_thread::sleep_for(std::chrono::seconds(1));
       remote.open_response = SerialLeverError::FailedToOpen;
@@ -182,13 +182,13 @@ void process_remote_instance(LeverSystem* system, LeverSystem::RemoteInstance& r
   if (open) {
     remote.need_send_state = true;
 
-    if (auto resp = om::set_force_grams(remote.serial_context, remote.commanded_force)) {
+    if (auto resp = ws::set_force_grams(remote.serial_context, remote.commanded_force)) {
       remote.force = remote.commanded_force;
     } else {
       remote.force = std::nullopt;
     }
 
-    if (auto state = om::read_state(remote.serial_context)) {
+    if (auto state = ws::read_state(remote.serial_context)) {
       remote.state = state.value();
     } else {
       remote.state = std::nullopt;

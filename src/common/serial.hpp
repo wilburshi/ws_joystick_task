@@ -4,7 +4,7 @@
 #include <memory>
 #include <optional>
 
-namespace om {
+namespace ws {
 
 struct SerialContext {
   std::unique_ptr<serial::Serial> instance{};

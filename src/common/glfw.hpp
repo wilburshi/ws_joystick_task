@@ -4,7 +4,7 @@
 
 struct GLFWwindow;
 
-namespace om {
+namespace ws {
 
 struct GLFWContext {
   GLFWwindow* window;

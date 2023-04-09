@@ -4,7 +4,7 @@
 #include "lever_system.hpp"
 #include <array>
 
-namespace om {
+namespace ws {
 
 struct App {
   virtual ~App() = default;
@@ -14,8 +14,8 @@ struct App {
   virtual void shutdown() {}
   int run();
 
-  std::vector<om::PortDescriptor> ports;
-  std::array<om::lever::SerialLeverHandle, 2> levers{};
+  std::vector<ws::PortDescriptor> ports;
+  std::array<ws::lever::SerialLeverHandle, 2> levers{};
   bool start_render{};
 };
 

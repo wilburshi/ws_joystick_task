@@ -4,7 +4,7 @@
 #include <optional>
 #include <cassert>
 
-namespace om {
+namespace ws {
 
 template <typename T>
 struct Handshake {

@@ -3,7 +3,7 @@
 #include "serial.hpp"
 #include <imgui.h>
 
-namespace om {
+namespace ws {
 
 gui::LeverGUIResult gui::render_lever_gui(const LeverGUIParams& params) {
   gui::LeverGUIResult result{};
@@ -13,11 +13,11 @@ gui::LeverGUIResult gui::render_lever_gui(const LeverGUIParams& params) {
   if (ImGui::InputInt2("ForceLimits", force_lims, ImGuiInputTextFlags_EnterReturnsTrue)) {
     for (int li = 0; li < params.num_levers; li++) {
       auto lever = params.levers[li];
-      int commanded_force = om::lever::get_commanded_force(lever_sys, lever);
+      int commanded_force = ws::lever::get_commanded_force(lever_sys, lever);
       if (commanded_force < force_lims[0]) {
-        om::lever::set_force(lever_sys, lever, force_lims[0]);
+        ws::lever::set_force(lever_sys, lever, force_lims[0]);
       } else if (commanded_force > force_lims[1]) {
-        om::lever::set_force(lever_sys, lever, force_lims[1]);
+        ws::lever::set_force(lever_sys, lever, force_lims[1]);
       }
     }
     result.force_limit0 = force_lims[0];
@@ -30,8 +30,8 @@ gui::LeverGUIResult gui::render_lever_gui(const LeverGUIParams& params) {
     const auto lever = params.levers[li];
 
     if (ImGui::TreeNode(tree_label.c_str())) {
-      const bool pending_open = om::lever::is_pending_open(lever_sys, lever);
-      const bool open = om::lever::is_open(lever_sys, lever);
+      const bool pending_open = ws::lever::is_pending_open(lever_sys, lever);
+      const bool open = ws::lever::is_open(lever_sys, lever);
 
       if (!pending_open && !open) {
         for (int i = 0; i < params.num_serial_ports; i++) {
@@ -42,7 +42,7 @@ gui::LeverGUIResult gui::render_lever_gui(const LeverGUIParams& params) {
           button_label += std::to_string(i);
 
           if (ImGui::Button(button_label.c_str())) {
-            om::lever::open_connection(lever_sys, lever, port.port);
+            ws::lever::open_connection(lever_sys, lever, port.port);
           }
         }
       }
@@ -53,26 +53,26 @@ gui::LeverGUIResult gui::render_lever_gui(const LeverGUIParams& params) {
         ImGui::Text("Connection is closed.");
       }
 
-      if (auto state = om::lever::get_state(lever_sys, lever)) {
-        auto str_state = om::to_string(state.value());
+      if (auto state = ws::lever::get_state(lever_sys, lever)) {
+        auto str_state = ws::to_string(state.value());
         ImGui::Text("%s", str_state.c_str());
       } else {
         ImGui::Text("Invalid state.");
       }
 
-      if (auto force = om::lever::get_canonical_force(lever_sys, lever)) {
+      if (auto force = ws::lever::get_canonical_force(lever_sys, lever)) {
         ImGui::Text("Canonical force: %d", force.value());
       } else {
         ImGui::Text("Invalid force.");
       }
 
-      int commanded_force = om::lever::get_commanded_force(lever_sys, lever);
+      int commanded_force = ws::lever::get_commanded_force(lever_sys, lever);
       ImGui::SliderInt("SetForce", &commanded_force, force_lims[0], force_lims[1]);
-      om::lever::set_force(lever_sys, lever, commanded_force);
+      ws::lever::set_force(lever_sys, lever, commanded_force);
 
       if (open) {
         if (ImGui::Button("Terminate serial context")) {
-          om::lever::close_connection(lever_sys, lever);
+          ws::lever::close_connection(lever_sys, lever);
         }
       }
 

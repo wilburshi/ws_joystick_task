@@ -1,6 +1,6 @@
 #pragma once
 
-namespace om {
+namespace ws {
 
 template <typename T>
 T clamp(const T& v, const T& lo, const T& hi) {

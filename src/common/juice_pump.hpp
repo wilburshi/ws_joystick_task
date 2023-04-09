@@ -3,7 +3,7 @@
 #include "identifier.hpp"
 #include <string>
 
-namespace om::pump {
+namespace ws::pump {
 
 enum class RateUnits {
   mLPerHour
@@ -24,7 +24,7 @@ struct PumpState {
 };
 
 struct PumpHandle {
-  OM_INTEGER_IDENTIFIER_EQUALITY(PumpHandle, index)
+  WS_INTEGER_IDENTIFIER_EQUALITY(PumpHandle, index)
   uint32_t index;
 };
 

@@ -58,7 +58,7 @@ struct LeverReadout {
 }; // under construction ... -WS
 
 
-struct App : public om::App {
+struct App : public ws::App {
     ~App() override = default;
     void setup() override {
         ::setup(*this);
@@ -95,13 +95,13 @@ struct App : public om::App {
     bool allow_automated_juice_delivery{ false };
 
     // int lever_force_limits[2]{0, 550};
-    om::lever::PullDetect detect_pull[2]{}; // one lever, but treat the two directions as two levers
+    ws::lever::PullDetect detect_pull[2]{}; // one lever, but treat the two directions as two levers
     float lever_position_limits[4]{ 32e3f, 27.5e3f, 32e2f, 36.5e2f };  // one lever, but treat the two directions as two levers
     bool invert_lever_position[2]{ true, false }; // one lever, but treat the two directions as two levers
 
 
     //float new_delay_time{2.0f};
-    double new_delay_time{ om::urand() * 4 + 3 }; //random delay between 3 to 5 s (in unit of second)
+    double new_delay_time{ ws::urand() * 4 + 3 }; //random delay between 3 to 5 s (in unit of second)
     int juice_delay_time{ 1000 }; // from successful pulling to juice delivery (in unit of minisecond)
 
 
@@ -116,14 +116,14 @@ struct App : public om::App {
     int first_pull_id{ 0 };
     bool getreward[2]{ false, false };
     int rewarded[2]{ 0, 0 };
-    om::TimePoint first_pull_time{};
+    ws::TimePoint first_pull_time{};
     double other_pull_time{}; // time gap bwtween two pulls
 
 
     double timepoint{};
-    om::TimePoint trialstart_time;
+    ws::TimePoint trialstart_time;
     double trial_start_time_forsave;
-    om::TimePoint session_start_time;
+    ws::TimePoint session_start_time;
     int behavior_event{}; // 0 - trial starts; 9 - trial ends; 1 - lever 1 is pulled; 2 - lever 2 is pulled; 3 - pump 1 delivery; 4 - pump 2 delivery; etc
 
 
@@ -132,26 +132,26 @@ struct App : public om::App {
 
 
     // initiate auditory cues
-    std::optional<om::audio::BufferHandle> debug_audio_buffer;
-    std::optional<om::audio::BufferHandle> start_trial_audio_buffer;
-    std::optional<om::audio::BufferHandle> sucessful_pull_audio_buffer;
-    std::optional<om::audio::BufferHandle> failed_pull_audio_buffer;
+    std::optional<ws::audio::BufferHandle> debug_audio_buffer;
+    std::optional<ws::audio::BufferHandle> start_trial_audio_buffer;
+    std::optional<ws::audio::BufferHandle> sucessful_pull_audio_buffer;
+    std::optional<ws::audio::BufferHandle> failed_pull_audio_buffer;
 
     // initiate stimuli if using colored squares
-    om::Vec2f stim0_size{ 0.2f };
-    om::Vec2f stim0_offset{ -0.4f, 0.25f };
-    om::Vec3f stim0_color{ 1.0f };
-    om::Vec3f stim0_color_noreward{ 0.5f, 0.5f, 0.5f };
-    om::Vec3f stim0_color_cooper{ 1.0f, 1.0f, 0.0f };
-    om::Vec3f stim0_color_disappear{ 0.0f };
-    om::Vec2f stim1_size{ 0.2f };
-    om::Vec2f stim1_offset{ 0.4f, 0.25f };
-    om::Vec3f stim1_color{ 1.0f };
-    om::Vec3f stim1_color_noreward{ 1.0f, 1.0f, 0.0f };
-    om::Vec3f stim1_color_cooper{ 1.0f, 1.0f, 0.0f };
-    om::Vec3f stim1_color_disappear{ 0.0f };
+    ws::Vec2f stim0_size{ 0.2f };
+    ws::Vec2f stim0_offset{ -0.4f, 0.25f };
+    ws::Vec3f stim0_color{ 1.0f };
+    ws::Vec3f stim0_color_noreward{ 0.5f, 0.5f, 0.5f };
+    ws::Vec3f stim0_color_cooper{ 1.0f, 1.0f, 0.0f };
+    ws::Vec3f stim0_color_disappear{ 0.0f };
+    ws::Vec2f stim1_size{ 0.2f };
+    ws::Vec2f stim1_offset{ 0.4f, 0.25f };
+    ws::Vec3f stim1_color{ 1.0f };
+    ws::Vec3f stim1_color_noreward{ 1.0f, 1.0f, 0.0f };
+    ws::Vec3f stim1_color_cooper{ 1.0f, 1.0f, 0.0f };
+    ws::Vec3f stim1_color_disappear{ 0.0f };
     // initiate stimuli if using other images (non colored squares)
-    std::optional<om::gfx::TextureHandle> debug_image;
+    std::optional<ws::gfx::TextureHandle> debug_image;
 
     // struct for saving data
     // std::ofstream save_trial_data_file;
@@ -242,15 +242,15 @@ json to_json(const std::vector<LeverReadout>& lever_reads) {
 void setup(App& app) {
 
 
-    auto buff_p = std::string{ OM_RES_DIR } + "/sounds/start_trial_beep.wav";
-    app.start_trial_audio_buffer = om::audio::read_buffer(buff_p.c_str());
+    auto buff_p = std::string{ WS_RES_DIR } + "/sounds/start_trial_beep.wav";
+    app.start_trial_audio_buffer = ws::audio::read_buffer(buff_p.c_str());
 
 
-    auto buff_p1 = std::string{ OM_RES_DIR } + "/sounds/successful_beep.wav";
-    app.sucessful_pull_audio_buffer = om::audio::read_buffer(buff_p1.c_str());
+    auto buff_p1 = std::string{ WS_RES_DIR } + "/sounds/successful_beep.wav";
+    app.sucessful_pull_audio_buffer = ws::audio::read_buffer(buff_p1.c_str());
 
-    auto buff_p2 = std::string{ OM_RES_DIR } + "/sounds/failed_beep.wav";
-    app.failed_pull_audio_buffer = om::audio::read_buffer(buff_p2.c_str());
+    auto buff_p2 = std::string{ WS_RES_DIR } + "/sounds/failed_beep.wav";
+    app.failed_pull_audio_buffer = ws::audio::read_buffer(buff_p2.c_str());
 
     // define the threshold of pulling
     const float dflt_rising_edge = 0.5f;  // 0.6f
@@ -272,7 +272,7 @@ void shutdown(App& app) {
     std::string leverread_name = app.experiment_date + "_" + app.animal1_name + "_" + app.animal2_name + "_lever_reading_1.json";
 
     // check if the files already exit, if so, name them as xx_2.json
-    std::string file_path0 = std::string{ OM_DATA_DIR } + "/" + trialrecords_name;
+    std::string file_path0 = std::string{ WS_DATA_DIR } + "/" + trialrecords_name;
     if (std::ifstream(file_path0))
     {
         trialrecords_name = app.experiment_date + "_" + app.animal1_name + "_" + app.animal2_name + "_TrialRecord_2.json";
@@ -282,11 +282,11 @@ void shutdown(App& app) {
     }
 
 
-    std::string file_path1 = std::string{ OM_DATA_DIR } + "/" + trialrecords_name;
+    std::string file_path1 = std::string{ WS_DATA_DIR } + "/" + trialrecords_name;
     std::ofstream output_file1(file_path1);
     output_file1 << to_json(app.trial_records);
 
-    std::string file_path2 = std::string{ OM_DATA_DIR } + "/" + bhvdata_name;
+    std::string file_path2 = std::string{ WS_DATA_DIR } + "/" + bhvdata_name;
     std::ofstream output_file2(file_path2);
     output_file2 << to_json(app.behavior_data);
 
@@ -309,23 +309,23 @@ void shutdown(App& app) {
 
 
 void render_lever_gui(App& app) {
-    om::gui::LeverGUIParams gui_params{};
+    ws::gui::LeverGUIParams gui_params{};
     gui_params.serial_ports = app.ports.data();
     gui_params.num_serial_ports = int(app.ports.size());
     gui_params.num_levers = int(app.levers.size());
     gui_params.levers = app.levers.data();
-    gui_params.lever_system = om::lever::get_global_lever_system();
-    auto gui_res = om::gui::render_lever_gui(gui_params);
+    gui_params.lever_system = ws::lever::get_global_lever_system();
+    auto gui_res = ws::gui::render_lever_gui(gui_params);
 }
 
 
 void render_juice_pump_gui(App& app) {
-    om::gui::JuicePumpGUIParams gui_params{};
+    ws::gui::JuicePumpGUIParams gui_params{};
     gui_params.serial_ports = app.ports.data();
     gui_params.num_ports = int(app.ports.size());
     gui_params.num_pumps = 2;
     gui_params.allow_automated_run = app.allow_automated_juice_delivery;
-    auto res = om::gui::render_juice_pump_gui(gui_params);
+    auto res = ws::gui::render_juice_pump_gui(gui_params);
 
     if (res.allow_automated_run) {
         app.allow_automated_juice_delivery = res.allow_automated_run.value();
@@ -354,7 +354,7 @@ void render_gui(App& app) {
 
     ImGui::Begin("GUI");
     if (ImGui::Button("Refresh ports")) {
-        app.ports = om::enumerate_ports();
+        app.ports = ws::enumerate_ports();
     }
 
     if (ImGui::Button("start the trial")) {
@@ -415,7 +415,7 @@ float to_normalized(float v, float min, float max, bool inv) {
         v = 0.0f;
     }
     else {
-        v = om::clamp(v, min, max);
+        v = ws::clamp(v, min, max);
         v = (v - min) / (max - min);
     }
     return inv ? 1.0f - v : v;
@@ -423,7 +423,7 @@ float to_normalized(float v, float min, float max, bool inv) {
 
 
 void task_update(App& app) {
-    using namespace om;
+    using namespace ws;
 
     static int state{};
     static bool entry{ true };
@@ -453,7 +453,7 @@ void task_update(App& app) {
 
         // sound to indicate the start of a session
         if (app.trialnumber == 0 && start_session_sound) {
-            om::audio::play_buffer_both(app.start_trial_audio_buffer.value(), 0.5f);
+            ws::audio::play_buffer_both(app.start_trial_audio_buffer.value(), 0.5f);
             app.session_start_time = now();
             start_session_sound = false;
 
@@ -466,8 +466,8 @@ void task_update(App& app) {
 
         // push the lever force back to normal
         // if (app.allow_auto_lever_force_set) {
-        //     om::lever::set_force(om::lever::get_global_lever_system(), app.levers[0], app.normalforce);
-        //     om::lever::set_force(om::lever::get_global_lever_system(), app.levers[1], app.normalforce);
+        //     ws::lever::set_force(ws::lever::get_global_lever_system(), app.levers[0], app.normalforce);
+        //     ws::lever::set_force(ws::lever::get_global_lever_system(), app.levers[1], app.normalforce);
         // }
     }
 
@@ -475,20 +475,20 @@ void task_update(App& app) {
     for (int i = 0; i < 2; i++) {
         const auto lh = app.levers[i];
         auto& pd = app.detect_pull[i];
-        if (auto lever_state = om::lever::get_state(om::lever::get_global_lever_system(), lh)) {
-            om::lever::PullDetectParams params{};
+        if (auto lever_state = ws::lever::get_state(ws::lever::get_global_lever_system(), lh)) {
+            ws::lever::PullDetectParams params{};
             params.current_position = to_normalized(
                 lever_state.value().potentiometer_reading,
                 app.lever_position_limits[2 * i],
                 app.lever_position_limits[2 * i + 1],
                 app.invert_lever_position[i]);
-            auto pull_res = om::lever::detect_pull(&pd, params);
+            auto pull_res = ws::lever::detect_pull(&pd, params);
             // if (pull_res.pulled_lever && app.tasktype != 0) {
             // if (pull_res.pulled_lever && app.sucessful_pull_audio_buffer && state == 0) { // only pull during the trial, not the ITI (state == 1)  -WS
             if (pull_res.pulled_lever && app.sucessful_pull_audio_buffer) {
 
                 if (app.tasktype != 3) {
-                    om::audio::play_buffer_on_channel(app.sucessful_pull_audio_buffer.value(), abs(i - 1), 0.5f);
+                    ws::audio::play_buffer_on_channel(app.sucessful_pull_audio_buffer.value(), abs(i - 1), 0.5f);
                 }
 
                 // trial starts # 1
@@ -537,15 +537,15 @@ void task_update(App& app) {
 
                 // high lever force to make the animal release the lever 
                 // if (app.allow_auto_lever_force_set) {
-                //     om::lever::set_force(om::lever::get_global_lever_system(), lh, app.releaseforce);
+                //     ws::lever::set_force(ws::lever::get_global_lever_system(), lh, app.releaseforce);
                 // }
 
                 // deliver juice accordingly
                 // self condition
                 if (app.tasktype == 1 || app.tasktype == 4) {
-                    auto pump_handle = om::pump::ith_pump(abs(i)); // pump id: 0 - pump 1; 1 - pump 2  -WS
+                    auto pump_handle = ws::pump::ith_pump(abs(i)); // pump id: 0 - pump 1; 1 - pump 2  -WS
                     std::this_thread::sleep_for(std::chrono::milliseconds(app.juice_delay_time));
-                    om::pump::run_dispense_program(pump_handle);
+                    ws::pump::run_dispense_program(pump_handle);
                     app.getreward[i] = true;
                     app.rewarded[i] = 1;
                     //
@@ -560,9 +560,9 @@ void task_update(App& app) {
 
                 // altruistic condition
                 else if (app.tasktype == 2) {
-                    auto pump_handle = om::pump::ith_pump(abs(i - 1)); // pump id: 0 - pump 1; 1 - pump 2  -WS
+                    auto pump_handle = ws::pump::ith_pump(abs(i - 1)); // pump id: 0 - pump 1; 1 - pump 2  -WS
                     std::this_thread::sleep_for(std::chrono::milliseconds(app.juice_delay_time));
-                    om::pump::run_dispense_program(pump_handle);
+                    ws::pump::run_dispense_program(pump_handle);
                     app.getreward[abs(i - 1)] = true;
                     app.rewarded[abs(i - 1)] = 1;
                     //
@@ -584,12 +584,12 @@ void task_update(App& app) {
                         if (app.tasktype == 3) {
                             if (app.leverpulled[0] && app.leverpulled[1]) {
 
-                                om::audio::play_buffer_both(app.sucessful_pull_audio_buffer.value(), 0.5f);
+                                ws::audio::play_buffer_both(app.sucessful_pull_audio_buffer.value(), 0.5f);
 
                                 // pump 0
-                                auto pump_handle = om::pump::ith_pump(0); // pump id: 0 - pump 1; 1 - pump 2  -WS
+                                auto pump_handle = ws::pump::ith_pump(0); // pump id: 0 - pump 1; 1 - pump 2  -WS
                                 std::this_thread::sleep_for(std::chrono::milliseconds(app.juice_delay_time));
-                                om::pump::run_dispense_program(pump_handle);
+                                ws::pump::run_dispense_program(pump_handle);
                                 app.getreward[0] = true;
                                 app.rewarded[0] = 1;
                                 //
@@ -601,9 +601,9 @@ void task_update(App& app) {
                                 time_stamps3.behavior_events = app.behavior_event;
                                 app.behavior_data.push_back(time_stamps3);
                                 // pump 1
-                                auto pump_handle2 = om::pump::ith_pump(1); // pump id: 0 - pump 1; 1 - pump 2  -WS
+                                auto pump_handle2 = ws::pump::ith_pump(1); // pump id: 0 - pump 1; 1 - pump 2  -WS
                                 // std::this_thread::sleep_for(std::chrono::milliseconds(app.juice_delay_time));
-                                om::pump::run_dispense_program(pump_handle2);
+                                ws::pump::run_dispense_program(pump_handle2);
                                 app.getreward[1] = true;
                                 app.rewarded[1] = 1;
                                 //
@@ -624,7 +624,7 @@ void task_update(App& app) {
                         // old edition
                         // cooperative condition
                         // if (app.tasktype == 3) {
-                        //   om::audio::play_buffer_both(app.failed_pull_audio_buffer.value(), 0.5f);
+                        //   ws::audio::play_buffer_both(app.failed_pull_audio_buffer.value(), 0.5f);
                         // }
 
                         //state = 1;
@@ -708,9 +708,9 @@ void task_update(App& app) {
 
 
             else if (pull_res.released_lever) {
-                // om::lever::set_force(om::lever::get_global_lever_system(), lh, app.normalforce);
+                // ws::lever::set_force(ws::lever::get_global_lever_system(), lh, app.normalforce);
 
-                // om::audio::play_buffer_both(app.failed_pull_audio_buffer.value(), 0.5f);
+                // ws::audio::play_buffer_both(app.failed_pull_audio_buffer.value(), 0.5f);
 
                 // save some lever information data
                 LeverReadout lever_read{};
@@ -740,10 +740,10 @@ void task_update(App& app) {
         new_trial.stim1_offset = app.stim1_offset;
         new_trial.stim1_size = app.stim1_size;
         if (app.tasktype == 0) {
-            //auto buff_p = std::string{ OM_RES_DIR } + "/sounds/start_trial_beep.wav";
-            //app.start_trial_audio_buffer = om::audio::read_buffer(buff_p.c_str());
-            // auto debug_image_p = std::string{ OM_RES_DIR } + "/images/calla_leaves.png";
-            // app.debug_image = om::gfx::read_2d_image(debug_image_p.c_str());
+            //auto buff_p = std::string{ WS_RES_DIR } + "/sounds/start_trial_beep.wav";
+            //app.start_trial_audio_buffer = ws::audio::read_buffer(buff_p.c_str());
+            // auto debug_image_p = std::string{ WS_RES_DIR } + "/images/calla_leaves.png";
+            // app.debug_image = ws::gfx::read_2d_image(debug_image_p.c_str());
             //
             new_trial.stim0_image = std::nullopt;
             new_trial.stim1_image = std::nullopt;
@@ -751,8 +751,8 @@ void task_update(App& app) {
             new_trial.stim1_color = app.stim1_color_noreward;
         }
         else if (app.tasktype == 1) {
-            //auto buff_p = std::string{ OM_RES_DIR } + "/sounds/start_trial_beep.wav";
-            //app.start_trial_audio_buffer = om::audio::read_buffer(buff_p.c_str());
+            //auto buff_p = std::string{ WS_RES_DIR } + "/sounds/start_trial_beep.wav";
+            //app.start_trial_audio_buffer = ws::audio::read_buffer(buff_p.c_str());
             //
             new_trial.stim0_image = std::nullopt;
             new_trial.stim1_image = std::nullopt;
@@ -760,26 +760,26 @@ void task_update(App& app) {
             new_trial.stim1_color = app.stim1_color;
         }
         else if (app.tasktype == 2) {
-            //auto buff_p = std::string{ OM_RES_DIR } + "/sounds/start_trial_beep.wav";
-            //app.start_trial_audio_buffer = om::audio::read_buffer(buff_p.c_str());
-            //auto debug_image_p = std::string{ OM_RES_DIR } + "/images/blue_triangle.png";
-           // app.debug_image = om::gfx::read_2d_image(debug_image_p.c_str());
+            //auto buff_p = std::string{ WS_RES_DIR } + "/sounds/start_trial_beep.wav";
+            //app.start_trial_audio_buffer = ws::audio::read_buffer(buff_p.c_str());
+            //auto debug_image_p = std::string{ WS_RES_DIR } + "/images/blue_triangle.png";
+           // app.debug_image = ws::gfx::read_2d_image(debug_image_p.c_str());
             //
             new_trial.stim0_image = app.debug_image;
             new_trial.stim1_image = app.debug_image;
         }
         else if (app.tasktype == 3) {
-            //auto buff_p = std::string{ OM_RES_DIR } + "/sounds/start_trial_beep.wav";
-            //app.start_trial_audio_buffer = om::audio::read_buffer(buff_p.c_str());
-            //auto debug_image_p = std::string{ OM_RES_DIR } + "/images/yellow_circle.png";
-            //app.debug_image = om::gfx::read_2d_image(debug_image_p.c_str());
+            //auto buff_p = std::string{ WS_RES_DIR } + "/sounds/start_trial_beep.wav";
+            //app.start_trial_audio_buffer = ws::audio::read_buffer(buff_p.c_str());
+            //auto debug_image_p = std::string{ WS_RES_DIR } + "/images/yellow_circle.png";
+            //app.debug_image = ws::gfx::read_2d_image(debug_image_p.c_str());
             //
             new_trial.stim0_image = app.debug_image;
             new_trial.stim1_image = app.debug_image;
         }
         else if (app.tasktype == 4) {
-            //auto buff_p = std::string{ OM_RES_DIR } + "/sounds/start_trial_beep.wav";
-            //app.start_trial_audio_buffer = om::audio::read_buffer(buff_p.c_str());
+            //auto buff_p = std::string{ WS_RES_DIR } + "/sounds/start_trial_beep.wav";
+            //app.start_trial_audio_buffer = ws::audio::read_buffer(buff_p.c_str());
             //
             new_trial.stim0_image = std::nullopt;
             new_trial.stim1_image = std::nullopt;
@@ -799,8 +799,8 @@ void task_update(App& app) {
 
 
         if (entry && app.allow_automated_juice_delivery) {
-            auto pump_handle = om::pump::ith_pump(1); // pump id: 0 - pump 1; 1 - pump 2
-            om::pump::run_dispense_program(pump_handle);
+            auto pump_handle = ws::pump::ith_pump(1); // pump id: 0 - pump 1; 1 - pump 2
+            ws::pump::run_dispense_program(pump_handle);
         }
 
 

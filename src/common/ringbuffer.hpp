@@ -4,7 +4,7 @@
 #include <atomic>
 #include <memory>
 
-namespace om {
+namespace ws {
 
 namespace detail {
   struct CopyRange {

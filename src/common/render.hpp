@@ -6,10 +6,10 @@
 #include <memory>
 #include <optional>
 
-namespace om::gfx {
+namespace ws::gfx {
 
 struct TextureHandle {
-  OM_INTEGER_IDENTIFIER_EQUALITY(TextureHandle, id)
+  WS_INTEGER_IDENTIFIER_EQUALITY(TextureHandle, id)
   uint32_t id;
 };
 

@@ -1,7 +1,7 @@
 #include "random.hpp"
 #include <random>
 
-namespace om {
+namespace ws {
 
 class Random {
 public:

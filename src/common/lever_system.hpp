@@ -4,10 +4,10 @@
 #include "identifier.hpp"
 #include <vector>
 
-namespace om::lever {
+namespace ws::lever {
 
 struct SerialLeverHandle {
-  OM_INTEGER_IDENTIFIER_EQUALITY(SerialLeverHandle, id)
+  WS_INTEGER_IDENTIFIER_EQUALITY(SerialLeverHandle, id)
   uint32_t id;
 };
 

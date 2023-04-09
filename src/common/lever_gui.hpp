@@ -2,16 +2,16 @@
 
 #include <optional>
 
-namespace om {
+namespace ws {
 struct PortDescriptor;
 }
 
-namespace om::lever {
+namespace ws::lever {
 struct LeverSystem;
 struct SerialLeverHandle;
 }
 
-namespace om::gui {
+namespace ws::gui {
 
 struct LeverGUIParams {
   lever::LeverSystem* lever_system;

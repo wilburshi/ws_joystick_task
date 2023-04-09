@@ -6,7 +6,7 @@
 #include <mutex>
 #include <iostream>
 
-namespace om {
+namespace ws {
 
 namespace {
 

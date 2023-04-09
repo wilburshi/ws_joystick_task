@@ -2,14 +2,14 @@
 
 #include <optional>
 
-namespace om {
+namespace ws {
 struct PortDescriptor;
 }
 
-namespace om::gui {
+namespace ws::gui {
 
 struct JuicePumpGUIParams {
-  const om::PortDescriptor* serial_ports;
+  const ws::PortDescriptor* serial_ports;
   int num_ports;
   int num_pumps;
   bool allow_automated_run;

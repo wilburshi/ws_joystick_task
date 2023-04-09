@@ -1,7 +1,7 @@
 #include "training.hpp"
 #include "common/render.hpp"
 
-namespace om {
+namespace ws {
 
 namespace {
 

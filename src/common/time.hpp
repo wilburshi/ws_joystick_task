@@ -2,7 +2,7 @@
 
 #include <chrono>
 
-namespace om {
+namespace ws {
 
 using TimePoint = std::chrono::high_resolution_clock::time_point;
 using Duration = std::chrono::duration<double>;

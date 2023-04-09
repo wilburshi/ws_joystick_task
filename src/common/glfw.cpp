@@ -2,7 +2,7 @@
 #include <glad/glad.h>
 #include <GLFW/glfw3.h>
 
-namespace om {
+namespace ws {
 
 bool initialize_glfw() {
   return glfwInit();

@@ -2,7 +2,7 @@
 
 #include "serial.hpp"
 
-namespace om {
+namespace ws {
 
 struct LeverState {
   float strain_gauge;

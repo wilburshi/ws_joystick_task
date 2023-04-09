@@ -2,7 +2,7 @@
 #include <string>
 #include <cstring>
 
-namespace om {
+namespace ws {
 
 namespace {
 

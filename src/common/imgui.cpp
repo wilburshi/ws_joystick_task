@@ -4,7 +4,7 @@
 #include <backends/imgui_impl_opengl3.h>
 #include <glad/glad.h>
 
-namespace om {
+namespace ws {
 
 void new_frame(ImguiContext* context, int fb_width, int fb_height) {
   assert(context->initialized);

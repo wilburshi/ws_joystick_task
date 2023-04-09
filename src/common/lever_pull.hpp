@@ -1,6 +1,6 @@
 #pragma once
 
-namespace om::lever {
+namespace ws::lever {
 
 struct PullDetect {
   bool is_high;

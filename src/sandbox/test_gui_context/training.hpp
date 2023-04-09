@@ -5,7 +5,7 @@
 #include "common/audio.hpp"
 #include "common/render.hpp"
 
-namespace om {
+namespace ws {
 
 struct NewTrialState {
   TimePoint t0;

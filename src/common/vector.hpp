@@ -1,6 +1,6 @@
 #pragma once
 
-namespace om {
+namespace ws {
 
 /*
  * Vec2

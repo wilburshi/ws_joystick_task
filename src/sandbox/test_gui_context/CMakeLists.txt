@@ -4,7 +4,7 @@ add_executable(${PROJECT_NAME}
         main.cpp
         training.hpp
         training.cpp)
-target_link_libraries(${PROJECT_NAME} om)
+target_link_libraries(${PROJECT_NAME} ws)
 target_compile_definitions(${PROJECT_NAME} PRIVATE
-        OM_RES_DIR="${PROJECT_SOURCE_DIR}/../../../res"
-        OM_DATA_DIR="${PROJECT_SOURCE_DIR}/../../../data")
+        WS_RES_DIR="${PROJECT_SOURCE_DIR}/../../../res"
+        WS_DATA_DIR="${PROJECT_SOURCE_DIR}/../../../data")
