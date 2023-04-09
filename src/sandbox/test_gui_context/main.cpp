@@ -266,20 +266,11 @@ void setup(App& app) {
 void shutdown(App& app) {
     (void)app;
 
-    std::string trialrecords_name = app.experiment_date + "_" + app.animal1_name + "_" + app.animal2_name + "_TrialRecord_1.json";
-    std::string bhvdata_name = app.experiment_date + "_" + app.animal1_name + "_" + app.animal2_name + "_bhv_data_1.json";
-    std::string sessioninfo_name = app.experiment_date + "_" + app.animal1_name + "_" + app.animal2_name + "_session_info_1.json";
-    std::string leverread_name = app.experiment_date + "_" + app.animal1_name + "_" + app.animal2_name + "_lever_reading_1.json";
-
-    // check if the files already exit, if so, name them as xx_2.json
-    std::string file_path0 = std::string{ WS_DATA_DIR } + "/" + trialrecords_name;
-    if (std::ifstream(file_path0))
-    {
-        trialrecords_name = app.experiment_date + "_" + app.animal1_name + "_" + app.animal2_name + "_TrialRecord_2.json";
-        bhvdata_name = app.experiment_date + "_" + app.animal1_name + "_" + app.animal2_name + "_bhv_data_2.json";
-        sessioninfo_name = app.experiment_date + "_" + app.animal1_name + "_" + app.animal2_name + "_session_info_2.json";
-        leverread_name = app.experiment_date + "_" + app.animal1_name + "_" + app.animal2_name + "_lever_reading_2.json";
-    }
+    auto postfix = ws::date_string();
+    std::string trialrecords_name = app.experiment_date + "_" + app.animal1_name + "_" + app.animal2_name + "_TrialRecord_" + postfix + ".json";
+    std::string bhvdata_name = app.experiment_date + "_" + app.animal1_name + "_" + app.animal2_name + "_bhv_data_" + postfix + ".json";
+    std::string sessioninfo_name = app.experiment_date + "_" + app.animal1_name + "_" + app.animal2_name + "_session_info_" + postfix + ".json";
+    std::string leverread_name = app.experiment_date + "_" + app.animal1_name + "_" + app.animal2_name + "_lever_reading_" + postfix + ".json";
 
 
     std::string file_path1 = std::string{ WS_DATA_DIR } + "/" + trialrecords_name;

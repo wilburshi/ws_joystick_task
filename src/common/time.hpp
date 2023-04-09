@@ -1,11 +1,15 @@
 #pragma once
 
 #include <chrono>
+#include <string>
+
 
 namespace ws {
 
 using TimePoint = std::chrono::high_resolution_clock::time_point;
 using Duration = std::chrono::duration<double>;
+
+std::string date_string();
 
 inline TimePoint now() {
   return std::chrono::high_resolution_clock::now();
