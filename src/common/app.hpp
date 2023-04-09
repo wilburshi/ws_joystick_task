@@ -15,7 +15,7 @@ struct App {
   int run();
 
   std::vector<ws::PortDescriptor> ports;
-  std::array<ws::lever::SerialLeverHandle, 2> levers{};
+  std::array<ws::lever::SerialLeverHandle, 1> levers{}; // 1 lever
   bool start_render{};
 };
 

@@ -19,13 +19,13 @@ struct LeverGUIParams {
   int num_levers;
   const PortDescriptor* serial_ports;
   int num_serial_ports;
-  int force_limit0;
-  int force_limit1;
+  //int force_limit0;
+  //int force_limit1;
 };
 
 struct LeverGUIResult {
-  std::optional<int> force_limit0;
-  std::optional<int> force_limit1;
+   std::optional<int> force_limit0;
+   std::optional<int> force_limit1;
 };
 
 LeverGUIResult render_lever_gui(const LeverGUIParams& params);

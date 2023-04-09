@@ -48,7 +48,7 @@ namespace ws {
         auto imgui_context = gui_res.value();
 
         auto* lever_sys = ws::lever::get_global_lever_system();
-        ws::lever::initialize(lever_sys, 2, levers.data());
+        ws::lever::initialize(lever_sys, 1, levers.data()); // one lever 
 
         glfwMakeContextCurrent(render_win.window);
         ws::gfx::init_rendering();

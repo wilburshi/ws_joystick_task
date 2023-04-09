@@ -9,21 +9,24 @@ gui::LeverGUIResult gui::render_lever_gui(const LeverGUIParams& params) {
   gui::LeverGUIResult result{};
   auto* lever_sys = params.lever_system;
 
-  int force_lims[2]{params.force_limit0, params.force_limit1};
-  if (ImGui::InputInt2("ForceLimits", force_lims, ImGuiInputTextFlags_EnterReturnsTrue)) {
-    for (int li = 0; li < params.num_levers; li++) {
-      auto lever = params.levers[li];
-      int commanded_force = ws::lever::get_commanded_force(lever_sys, lever);
-      if (commanded_force < force_lims[0]) {
-        ws::lever::set_force(lever_sys, lever, force_lims[0]);
-      } else if (commanded_force > force_lims[1]) {
-        ws::lever::set_force(lever_sys, lever, force_lims[1]);
-      }
-    }
-    result.force_limit0 = force_lims[0];
-    result.force_limit1 = force_lims[1];
+  if (0)
+  {
+     // int force_lims[2]{ params.force_limit0, params.force_limit1 };
+     // if (ImGui::InputInt2("ForceLimits", force_lims, ImGuiInputTextFlags_EnterReturnsTrue)) {
+     //     for (int li = 0; li < params.num_levers; li++) {
+     //         auto lever = params.levers[li];
+     //         int commanded_force = ws::lever::get_commanded_force(lever_sys, lever);
+     //         if (commanded_force < force_lims[0]) {
+     //             ws::lever::set_force(lever_sys, lever, force_lims[0]);
+     //         }
+     //         else if (commanded_force > force_lims[1]) {
+     //             ws::lever::set_force(lever_sys, lever, force_lims[1]);
+     //         }
+     //     }
+     //     result.force_limit0 = force_lims[0];
+     //     result.force_limit1 = force_lims[1];
+     // }
   }
-
   for (int li = 0; li < params.num_levers; li++) {
     std::string tree_label{"Lever"};
     tree_label += std::to_string(li);
@@ -66,9 +69,12 @@ gui::LeverGUIResult gui::render_lever_gui(const LeverGUIParams& params) {
         ImGui::Text("Invalid force.");
       }
 
-      int commanded_force = ws::lever::get_commanded_force(lever_sys, lever);
-      ImGui::SliderInt("SetForce", &commanded_force, force_lims[0], force_lims[1]);
-      ws::lever::set_force(lever_sys, lever, commanded_force);
+      if (0)
+      {
+          //int commanded_force = ws::lever::get_commanded_force(lever_sys, lever);
+          //ImGui::SliderInt("SetForce", &commanded_force, force_lims[0], force_lims[1]);
+          //ws::lever::set_force(lever_sys, lever, commanded_force);
+      }
 
       if (open) {
         if (ImGui::Button("Terminate serial context")) {

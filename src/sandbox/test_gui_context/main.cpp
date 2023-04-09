@@ -96,7 +96,7 @@ struct App : public ws::App {
 
     // int lever_force_limits[2]{0, 550};
     ws::lever::PullDetect detect_pull[2]{}; // one lever, but treat the two directions as two levers
-    float lever_position_limits[4]{ 32e3f, 27.5e3f, 32e2f, 36.5e2f };  // one lever, but treat the two directions as two levers
+    float lever_position_limits[4]{ 32e3f, 27.5e3f, 32e3f, 36.5e3f };  // one lever, but treat the two directions as two levers
     bool invert_lever_position[2]{ true, false }; // one lever, but treat the two directions as two levers
 
 
@@ -134,8 +134,8 @@ struct App : public ws::App {
     // initiate auditory cues
     std::optional<ws::audio::BufferHandle> debug_audio_buffer;
     std::optional<ws::audio::BufferHandle> start_trial_audio_buffer;
-    std::optional<ws::audio::BufferHandle> sucessful_pull_audio_buffer;
-    std::optional<ws::audio::BufferHandle> failed_pull_audio_buffer;
+    std::optional<ws::audio::BufferHandle> large_juice_audio_buffer;
+    std::optional<ws::audio::BufferHandle> small_juice_audio_buffer;
 
     // initiate stimuli if using colored squares
     ws::Vec2f stim0_size{ 0.2f };
@@ -245,16 +245,15 @@ void setup(App& app) {
     auto buff_p = std::string{ WS_RES_DIR } + "/sounds/start_trial_beep.wav";
     app.start_trial_audio_buffer = ws::audio::read_buffer(buff_p.c_str());
 
+    auto buff_p1 = std::string{ WS_RES_DIR } + "/sounds/large_juice_beep.wav";
+    app.large_juice_audio_buffer = ws::audio::read_buffer(buff_p1.c_str());
 
-    auto buff_p1 = std::string{ WS_RES_DIR } + "/sounds/successful_beep.wav";
-    app.sucessful_pull_audio_buffer = ws::audio::read_buffer(buff_p1.c_str());
-
-    auto buff_p2 = std::string{ WS_RES_DIR } + "/sounds/failed_beep.wav";
-    app.failed_pull_audio_buffer = ws::audio::read_buffer(buff_p2.c_str());
+    auto buff_p2 = std::string{ WS_RES_DIR } + "/sounds/small_juice_beep.wav";
+    app.small_juice_audio_buffer = ws::audio::read_buffer(buff_p2.c_str());
 
     // define the threshold of pulling
-    const float dflt_rising_edge = 0.5f;  // 0.6f
-    const float dflt_falling_edge = 0.2f; // 0.25f
+    const float dflt_rising_edge = 0.45f;  // 0.6f
+    const float dflt_falling_edge = 0.25f; // 0.25f
     app.detect_pull[0].rising_edge = dflt_rising_edge;
     app.detect_pull[1].rising_edge = dflt_rising_edge;
     app.detect_pull[0].falling_edge = dflt_falling_edge;
@@ -347,7 +346,7 @@ void render_gui(App& app) {
     if (ImGui::Button("Refresh ports")) {
         app.ports = ws::enumerate_ports();
     }
-
+    
     if (ImGui::Button("start the trial")) {
         app.start_render = true;
     }
@@ -358,7 +357,6 @@ void render_gui(App& app) {
 
 
     render_lever_gui(app);
-
 
 
     if (ImGui::TreeNode("PullDetect")) {
@@ -380,20 +378,21 @@ void render_gui(App& app) {
     }
 
 
-    if (ImGui::TreeNode("Stim0")) {
-        ImGui::InputFloat3("Color", &app.stim0_color.x);
-        ImGui::InputFloat2("Offset", &app.stim0_offset.x);
-        ImGui::InputFloat2("Size", &app.stim0_size.x);
-        ImGui::TreePop();
-    }
-    if (ImGui::TreeNode("Stim1")) {
-        ImGui::InputFloat3("Color", &app.stim1_color.x);
-        ImGui::InputFloat2("Offset", &app.stim1_offset.x);
-        ImGui::InputFloat2("Size", &app.stim1_size.x);
-        ImGui::TreePop();
-    }
+   // if (ImGui::TreeNode("Stim0")) {
+   //     ImGui::InputFloat3("Color", &app.stim0_color.x);
+   //     ImGui::InputFloat2("Offset", &app.stim0_offset.x);
+   //     ImGui::InputFloat2("Size", &app.stim0_size.x);
+   //     ImGui::TreePop();
+   // }
+   // if (ImGui::TreeNode("Stim1")) {
+   //     ImGui::InputFloat3("Color", &app.stim1_color.x);
+   //     ImGui::InputFloat2("Offset", &app.stim1_offset.x);
+   //     ImGui::InputFloat2("Size", &app.stim1_size.x);
+   //     ImGui::TreePop();
+   // }
 
     ImGui::End();
+
 
     ImGui::Begin("JuicePump");
     render_juice_pump_gui(app);
@@ -463,7 +462,7 @@ void task_update(App& app) {
     }
 
     // check the levers
-    for (int i = 0; i < 2; i++) {
+    for (int i = 0; i < 1; i++) {
         const auto lh = app.levers[i];
         auto& pd = app.detect_pull[i];
         if (auto lever_state = ws::lever::get_state(ws::lever::get_global_lever_system(), lh)) {
@@ -474,12 +473,10 @@ void task_update(App& app) {
                 app.lever_position_limits[2 * i + 1],
                 app.invert_lever_position[i]);
             auto pull_res = ws::lever::detect_pull(&pd, params);
-            // if (pull_res.pulled_lever && app.tasktype != 0) {
-            // if (pull_res.pulled_lever && app.sucessful_pull_audio_buffer && state == 0) { // only pull during the trial, not the ITI (state == 1)  -WS
-            if (pull_res.pulled_lever && app.sucessful_pull_audio_buffer) {
+            if (pull_res.pulled_lever && app.large_juice_audio_buffer) {
 
                 if (app.tasktype != 3) {
-                    ws::audio::play_buffer_on_channel(app.sucessful_pull_audio_buffer.value(), abs(i - 1), 0.5f);
+                    ws::audio::play_buffer_on_channel(app.large_juice_audio_buffer.value(), abs(i - 1), 0.5f);
                 }
 
                 // trial starts # 1
@@ -575,7 +572,7 @@ void task_update(App& app) {
                         if (app.tasktype == 3) {
                             if (app.leverpulled[0] && app.leverpulled[1]) {
 
-                                ws::audio::play_buffer_both(app.sucessful_pull_audio_buffer.value(), 0.5f);
+                                ws::audio::play_buffer_both(app.large_juice_audio_buffer.value(), 0.5f);
 
                                 // pump 0
                                 auto pump_handle = ws::pump::ith_pump(0); // pump id: 0 - pump 1; 1 - pump 2  -WS
@@ -612,15 +609,7 @@ void task_update(App& app) {
                         break;
                     }
                     else {
-                        // old edition
-                        // cooperative condition
-                        // if (app.tasktype == 3) {
-                        //   ws::audio::play_buffer_both(app.failed_pull_audio_buffer.value(), 0.5f);
-                        // }
-
-                        //state = 1;
-                        //entry = true;
-                        //break;
+                        
 
                         // new edition
                         // end of a trial
@@ -699,10 +688,7 @@ void task_update(App& app) {
 
 
             else if (pull_res.released_lever) {
-                // ws::lever::set_force(ws::lever::get_global_lever_system(), lh, app.normalforce);
-
-                // ws::audio::play_buffer_both(app.failed_pull_audio_buffer.value(), 0.5f);
-
+  
                 // save some lever information data
                 LeverReadout lever_read{};
                 lever_read.trial_number = app.trialnumber;
