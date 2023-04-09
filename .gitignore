@@ -6,5 +6,5 @@ archive/
 cmake-build-release/
 cmake-build-debug/
 data/
-notes/NE-1000 Syringe Pump User Manual.pdf
+notes/
 .DS_Store

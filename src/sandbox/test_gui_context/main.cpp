@@ -298,11 +298,11 @@ void shutdown(App& app) {
     session_info.task_type = app.tasktype;
     app.session_info.push_back(session_info);
 
-    std::string file_path3 = std::string{ OM_DATA_DIR } + "/" + sessioninfo_name;
+    std::string file_path3 = std::string{ WS_DATA_DIR } + "/" + sessioninfo_name;
     std::ofstream output_file3(file_path3);
     output_file3 << to_json(app.session_info);
 
-    std::string file_path4 = std::string{ OM_DATA_DIR } + "/" + leverread_name;
+    std::string file_path4 = std::string{ WS_DATA_DIR } + "/" + leverread_name;
     std::ofstream output_file4(file_path4);
     output_file4 << to_json(app.lever_readout);
 }
