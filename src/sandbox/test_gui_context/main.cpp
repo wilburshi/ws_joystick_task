@@ -103,8 +103,8 @@ struct App : public ws::App {
     //float new_delay_time{2.0f};
     double new_delay_time{ ws::urand() * 4 + 3 }; //random delay between 3 to 5 s (in unit of second)
     int animal_delay_time{ 1000 }; // from pull animal to unpull animal (in unit of minisecond)
-    int juice1_delay_time{  500 }; // from successful pulling to juice1 delivery (in unit of minisecond)
-    int juice2_delay_time{ 1500 }; // from successful pulling to juice2 delivery (in unit of minisecond)
+    int juice1_delay_time{ 0 }; // from successful pulling to juice1 delivery (in unit of minisecond)
+    int juice2_delay_time{ 0 }; // from successful pulling to juice2 delivery (in unit of minisecond)
 
 
     // session threshold
@@ -478,6 +478,8 @@ void task_update(App& app) {
             auto pull_res = ws::lever::detect_pull(&pd, params);
             if (pull_res.pulled_lever) {
 
+                
+
                 // trial starts # 1
                 // trial starts whenever one of the animal pulls
                 if (!app.leverpulled[0] || !app.leverpulled[1]) {
@@ -529,12 +531,15 @@ void task_update(App& app) {
                     ws::audio::play_buffer_on_channel(app.small_juice_audio_buffer.value(), abs(i), 0.5f);
                                       
                     // juice delivery time       
-                    // time animal who pulls 
+                    // the aninal who pulls get large reward                                
+                    auto pump_handle1 = ws::pump::ith_pump(abs(i)); // pump id: 0 - pump 1; 1 - pump 2  -WS 
+                    auto desired_pump_state1 = ws::pump::read_desired_pump_state(pump_handle1);
+                    desired_pump_state1.volume = 0.2;
+                    ws::pump::set_dispensed_volume(pump_handle1, desired_pump_state1.volume, desired_pump_state1.volume_units);
+                    //
                     std::this_thread::sleep_for(std::chrono::milliseconds(app.juice1_delay_time));
-                    for (int j = 0; j < 2; j++) {
-                        auto pump_handle1 = ws::pump::ith_pump(abs(i)); // pump id: 0 - pump 1; 1 - pump 2  -WS 
-                        ws::pump::run_dispense_program(pump_handle1);
-                    }
+                    auto pump_handle1_1 = ws::pump::ith_pump(abs(i)); // pump id: 0 - pump 1; 1 - pump 2  -WS 
+                    ws::pump::run_dispense_program(pump_handle1_1);                   
                     app.getreward[i] = true;
                     app.rewarded[i] = 1;
                     //
@@ -546,10 +551,15 @@ void task_update(App& app) {
                     time_stamps3.behavior_events = app.behavior_event;
                     app.behavior_data.push_back(time_stamps3);
 
-                    // time animal who does not pull
-                    //std::this_thread::sleep_for(std::chrono::milliseconds(app.juice2_delay_time));
+                    // the aninal who does not pull get small reward
                     auto pump_handle2 = ws::pump::ith_pump(abs(i - 1)); // pump id: 0 - pump 1; 1 - pump 2  -WS              
-                    ws::pump::run_dispense_program(pump_handle2);
+                    auto desired_pump_state2 = ws::pump::read_desired_pump_state(pump_handle2);
+                    desired_pump_state2.volume = 0.1;
+                    ws::pump::set_dispensed_volume(pump_handle2, desired_pump_state2.volume, desired_pump_state2.volume_units);
+                    //
+                    std::this_thread::sleep_for(std::chrono::milliseconds(app.juice2_delay_time));
+                    auto pump_handle2_1 = ws::pump::ith_pump(abs(i - 1)); // pump id: 0 - pump 1; 1 - pump 2  -WS
+                    ws::pump::run_dispense_program(pump_handle2_1);
                     app.getreward[abs(i - 1)] = true;
                     app.rewarded[abs(i - 1)] = 1;
                     //
@@ -688,6 +698,50 @@ void task_update(App& app) {
     }
 
     case 1: {
+
+        // deliver juices
+        if (app.tasktype == 1) {         
+
+            // juice delivery time       
+            // the aninal who pulls get large reward                                         
+            std::this_thread::sleep_for(std::chrono::milliseconds(app.juice1_delay_time));
+            auto pump_handle1_1 = ws::pump::ith_pump(abs(app.first_pull_id-1)); // pump id: 0 - pump 1; 1 - pump 2  -WS 
+            ws::pump::run_dispense_program(pump_handle1_1);
+            app.getreward[app.first_pull_id - 1] = true;
+            app.rewarded[app.first_pull_id - 1] = 1;
+            //
+            app.timepoint = elapsed_time(app.trialstart_time, now());
+            app.behavior_event = abs(app.first_pull_id - 1) + 3; // pump 1 or 2 deliver  
+            BehaviorData time_stamps3{};
+            time_stamps3.trial_number = app.trialnumber;
+            time_stamps3.time_points = app.timepoint;
+            time_stamps3.behavior_events = app.behavior_event;
+            app.behavior_data.push_back(time_stamps3);
+
+            // the aninal who does not pull get small reward
+            std::this_thread::sleep_for(std::chrono::milliseconds(app.juice2_delay_time));
+            auto pump_handle2_1 = ws::pump::ith_pump(abs(app.first_pull_id - 1 - 1)); // pump id: 0 - pump 1; 1 - pump 2  -WS
+            ws::pump::run_dispense_program(pump_handle2_1);
+            app.getreward[abs(app.first_pull_id - 1 - 1)] = true;
+            app.rewarded[abs(app.first_pull_id - 1 - 1)] = 1;
+            //
+            app.timepoint = elapsed_time(app.trialstart_time, now());
+            app.behavior_event = abs(app.first_pull_id - 1 - 1) + 3; // pump 1 or 2 deliver  
+            BehaviorData time_stamps4{};
+            time_stamps4.trial_number = app.trialnumber;
+            time_stamps4.time_points = app.timepoint;
+            time_stamps4.behavior_events = app.behavior_event;
+            app.behavior_data.push_back(time_stamps4);
+        }
+
+        // social dilemma condition
+        else if (app.tasktype == 2) {
+            
+        }
+
+
+
+
         state = 2;
         entry = true;
         app.timepoint = elapsed_time(app.trialstart_time, now());

@@ -46,8 +46,8 @@ gui::JuicePumpGUIResult gui::render_juice_pump_gui(const JuicePumpGUIParams& par
             pump_handle, desired_pump_state.rate, desired_pump_state.rate_units);
         }
       }
-      if (ImGui::InputFloat("Volume", &desired_pump_state.volume, 0.0f, 0.0f, "%0.3f", enter_flag)) {
-        if (desired_pump_state.volume >= 0.0f) {
+      if (ImGui::InputFloat("Volume", &desired_pump_state.volume, 0.00f, 0.00f, "%0.4f", enter_flag)) {
+        if (desired_pump_state.volume >= 0.000f) {
           ws::pump::set_dispensed_volume(
             pump_handle, desired_pump_state.volume, desired_pump_state.volume_units);
         }
