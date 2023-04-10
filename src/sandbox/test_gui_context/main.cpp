@@ -462,7 +462,7 @@ void task_update(App& app) {
     }
 
     // check the levers
-    for (int i = 0; i < 1; i++) {
+    for (int i = 0; i < 2; i++) {
         const auto lh = app.levers[i];
         auto& pd = app.detect_pull[i];
         if (auto lever_state = ws::lever::get_state(ws::lever::get_global_lever_system(), lh)) {
