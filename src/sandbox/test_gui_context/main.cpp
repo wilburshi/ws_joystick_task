@@ -115,7 +115,7 @@ struct App : public ws::App {
 
     // variables that are updated every trial
     int trialnumber{ 0 };
-    int first_pull_id{ 0 };
+    int first_pull_id{ 0  };
     bool getreward[2]{ false, false };
     int rewarded[2]{ 0, 0 };
     ws::TimePoint first_pull_time{};
