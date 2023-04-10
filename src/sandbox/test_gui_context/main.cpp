@@ -96,13 +96,15 @@ struct App : public ws::App {
 
     // int lever_force_limits[2]{0, 550};
     ws::lever::PullDetect detect_pull[2]{}; // one lever, but treat the two directions as two levers
-    float lever_position_limits[4]{ 32e3f, 27.5e3f, 32e3f, 36.5e3f };  // one lever, but treat the two directions as two levers
+    float lever_position_limits[4]{ 27.5e3f, 32e3f, 32e3f, 36.5e3f };  // one lever, but treat the two directions as two levers
     bool invert_lever_position[2]{ true, false }; // one lever, but treat the two directions as two levers
 
 
     //float new_delay_time{2.0f};
     double new_delay_time{ ws::urand() * 4 + 3 }; //random delay between 3 to 5 s (in unit of second)
-    int juice_delay_time{ 1000 }; // from successful pulling to juice delivery (in unit of minisecond)
+    int animal_delay_time{ 1000 }; // from pull animal to unpull animal (in unit of minisecond)
+    int juice1_delay_time{  500 }; // from successful pulling to juice1 delivery (in unit of minisecond)
+    int juice2_delay_time{ 1500 }; // from successful pulling to juice2 delivery (in unit of minisecond)
 
 
     // session threshold
@@ -463,7 +465,8 @@ void task_update(App& app) {
 
     // check the levers
     for (int i = 0; i < 2; i++) {
-        const auto lh = app.levers[i];
+        // const auto lh = app.levers[i];
+        const auto lh = app.levers[0];
         auto& pd = app.detect_pull[i];
         if (auto lever_state = ws::lever::get_state(ws::lever::get_global_lever_system(), lh)) {
             ws::lever::PullDetectParams params{};
@@ -473,15 +476,11 @@ void task_update(App& app) {
                 app.lever_position_limits[2 * i + 1],
                 app.invert_lever_position[i]);
             auto pull_res = ws::lever::detect_pull(&pd, params);
-            if (pull_res.pulled_lever && app.large_juice_audio_buffer) {
-
-                if (app.tasktype != 3) {
-                    ws::audio::play_buffer_on_channel(app.large_juice_audio_buffer.value(), abs(i - 1), 0.5f);
-                }
+            if (pull_res.pulled_lever) {
 
                 // trial starts # 1
                 // trial starts whenever one of the animal pulls
-                if (!app.leverpulled[0] && !app.leverpulled[1]) {
+                if (!app.leverpulled[0] || !app.leverpulled[1]) {
                     app.trialnumber = app.trialnumber + 1;
                     app.first_pull_id = i + 1;
                     app.timepoint = 0;
@@ -510,10 +509,6 @@ void task_update(App& app) {
                 LeverReadout lever_read{};
                 lever_read.trial_number = app.trialnumber;
                 lever_read.readout_timepoint = app.timepoint;
-                //lever_read.potentiometer_lever1 = lever_state.value().potentiometer_reading;
-                //lever_read.strain_gauge_lever1 = lever_state.value().strain_gauge;
-                //lever_read.potentiometer_lever2 = lever_state.value().potentiometer_reading;
-                //lever_read.strain_gauge_lever2 = lever_state.value().strain_gauge;
                 lever_read.strain_gauge_lever = lever_state.value().strain_gauge;
                 lever_read.potentiometer_lever = lever_state.value().potentiometer_reading;
                 lever_read.lever_id = i + 1;
@@ -523,17 +518,23 @@ void task_update(App& app) {
                 app.leverpulled[i] = true;
 
 
-                // high lever force to make the animal release the lever 
-                // if (app.allow_auto_lever_force_set) {
-                //     ws::lever::set_force(ws::lever::get_global_lever_system(), lh, app.releaseforce);
-                // }
-
                 // deliver juice accordingly
-                // self condition
-                if (app.tasktype == 1 || app.tasktype == 4) {
-                    auto pump_handle = ws::pump::ith_pump(abs(i)); // pump id: 0 - pump 1; 1 - pump 2  -WS
-                    std::this_thread::sleep_for(std::chrono::milliseconds(app.juice_delay_time));
-                    ws::pump::run_dispense_program(pump_handle);
+                // competition condition
+                if (app.tasktype == 1) {
+                    // sound cue
+                    // the aninal who pulls get large reward
+                    ws::audio::play_buffer_on_channel(app.large_juice_audio_buffer.value(), abs(i - 1), 0.5f);
+                    // the aninal who does not pull get small reward
+                    std::this_thread::sleep_for(std::chrono::milliseconds(app.animal_delay_time));
+                    ws::audio::play_buffer_on_channel(app.small_juice_audio_buffer.value(), abs(i), 0.5f);
+                                      
+                    // juice delivery time       
+                    // time animal who pulls 
+                    std::this_thread::sleep_for(std::chrono::milliseconds(app.juice1_delay_time));
+                    for (int j = 0; j < 2; j++) {
+                        auto pump_handle1 = ws::pump::ith_pump(abs(i)); // pump id: 0 - pump 1; 1 - pump 2  -WS 
+                        ws::pump::run_dispense_program(pump_handle1);
+                    }
                     app.getreward[i] = true;
                     app.rewarded[i] = 1;
                     //
@@ -544,144 +545,67 @@ void task_update(App& app) {
                     time_stamps3.time_points = app.timepoint;
                     time_stamps3.behavior_events = app.behavior_event;
                     app.behavior_data.push_back(time_stamps3);
-                }
 
-                // altruistic condition
-                else if (app.tasktype == 2) {
-                    auto pump_handle = ws::pump::ith_pump(abs(i - 1)); // pump id: 0 - pump 1; 1 - pump 2  -WS
-                    std::this_thread::sleep_for(std::chrono::milliseconds(app.juice_delay_time));
-                    ws::pump::run_dispense_program(pump_handle);
+                    // time animal who does not pull
+                    //std::this_thread::sleep_for(std::chrono::milliseconds(app.juice2_delay_time));
+                    auto pump_handle2 = ws::pump::ith_pump(abs(i - 1)); // pump id: 0 - pump 1; 1 - pump 2  -WS              
+                    ws::pump::run_dispense_program(pump_handle2);
                     app.getreward[abs(i - 1)] = true;
                     app.rewarded[abs(i - 1)] = 1;
                     //
                     app.timepoint = elapsed_time(app.trialstart_time, now());
                     app.behavior_event = abs(i - 1) + 3; // pump 1 or 2 deliver  
+                    BehaviorData time_stamps4{};
+                    time_stamps4.trial_number = app.trialnumber;
+                    time_stamps4.time_points = app.timepoint;
+                    time_stamps4.behavior_events = app.behavior_event;
+                    app.behavior_data.push_back(time_stamps4);
+                }
+
+                // social dilemma condition
+                else if (app.tasktype == 2) {
+                    // the aninal who pulls get large reward
+                    ws::audio::play_buffer_on_channel(app.small_juice_audio_buffer.value(), abs(i - 1), 0.5f);
+                    auto pump_handle1 = ws::pump::ith_pump(abs(i)); // pump id: 0 - pump 1; 1 - pump 2  -WS
+                    std::this_thread::sleep_for(std::chrono::milliseconds(app.juice1_delay_time));
+                    ws::pump::run_dispense_program(pump_handle1);
+                    app.getreward[i] = true;
+                    app.rewarded[i] = 1;
+                    //
+                    app.timepoint = elapsed_time(app.trialstart_time, now());
+                    app.behavior_event = abs(i) + 3; // pump 1 or 2 deliver  
                     BehaviorData time_stamps3{};
                     time_stamps3.trial_number = app.trialnumber;
                     time_stamps3.time_points = app.timepoint;
                     time_stamps3.behavior_events = app.behavior_event;
                     app.behavior_data.push_back(time_stamps3);
+
+                    // the aninal who does not pull get small reward
+                    std::this_thread::sleep_for(std::chrono::milliseconds(app.animal_delay_time));
+                    //
+                    ws::audio::play_buffer_on_channel(app.large_juice_audio_buffer.value(), abs(i), 0.5f);
+                    auto pump_handle2 = ws::pump::ith_pump(abs(i - 1)); // pump id: 0 - pump 1; 1 - pump 2  -WS
+                    std::this_thread::sleep_for(std::chrono::milliseconds(app.juice2_delay_time));
+                    ws::pump::run_dispense_program(pump_handle2);
+                    app.getreward[abs(i - 1)] = true;
+                    app.rewarded[abs(i - 1)] = 1;
+                    //
+                    app.timepoint = elapsed_time(app.trialstart_time, now());
+                    app.behavior_event = abs(i - 1) + 3; // pump 1 or 2 deliver  
+                    BehaviorData time_stamps4{};
+                    time_stamps4.trial_number = app.trialnumber;
+                    time_stamps4.time_points = app.timepoint;
+                    time_stamps4.behavior_events = app.behavior_event;
+                    app.behavior_data.push_back(time_stamps4);
                 }
 
-                // mutual cooperative condition (see below)
-                // examine the other animal to determine how the trial ends 
-                if (lever_read.lever_id == abs(app.first_pull_id - 2) + 1) {
-                    if (1) {
-
-                        // cooperative condition
-                        if (app.tasktype == 3) {
-                            if (app.leverpulled[0] && app.leverpulled[1]) {
-
-                                ws::audio::play_buffer_both(app.large_juice_audio_buffer.value(), 0.5f);
-
-                                // pump 0
-                                auto pump_handle = ws::pump::ith_pump(0); // pump id: 0 - pump 1; 1 - pump 2  -WS
-                                std::this_thread::sleep_for(std::chrono::milliseconds(app.juice_delay_time));
-                                ws::pump::run_dispense_program(pump_handle);
-                                app.getreward[0] = true;
-                                app.rewarded[0] = 1;
-                                //
-                                app.timepoint = elapsed_time(app.trialstart_time, now());
-                                app.behavior_event = 0 + 3; // pump 1 or 2 deliver  
-                                BehaviorData time_stamps3{};
-                                time_stamps3.trial_number = app.trialnumber;
-                                time_stamps3.time_points = app.timepoint;
-                                time_stamps3.behavior_events = app.behavior_event;
-                                app.behavior_data.push_back(time_stamps3);
-                                // pump 1
-                                auto pump_handle2 = ws::pump::ith_pump(1); // pump id: 0 - pump 1; 1 - pump 2  -WS
-                                // std::this_thread::sleep_for(std::chrono::milliseconds(app.juice_delay_time));
-                                ws::pump::run_dispense_program(pump_handle2);
-                                app.getreward[1] = true;
-                                app.rewarded[1] = 1;
-                                //
-                                app.timepoint = elapsed_time(app.trialstart_time, now());
-                                app.behavior_event = abs(1) + 3; // pump 1 or 2 deliver  
-                                BehaviorData time_stamps4{};
-                                time_stamps4.trial_number = app.trialnumber;
-                                time_stamps4.time_points = app.timepoint;
-                                time_stamps4.behavior_events = app.behavior_event;
-                                app.behavior_data.push_back(time_stamps4);
-                            }
-                        }
-                        state = 1;
-                        entry = true;
-                        break;
-                    }
-                    else {
-                        
-
-                        // new edition
-                        // end of a trial
-                        app.timepoint = elapsed_time(app.trialstart_time, now());
-                        app.behavior_event = 9; // end of a trial
-                        BehaviorData time_stamps{};
-                        time_stamps.trial_number = app.trialnumber;
-                        time_stamps.time_points = app.timepoint;
-                        time_stamps.behavior_events = app.behavior_event;
-                        app.behavior_data.push_back(time_stamps);
-                        //
-                        TrialRecord trial_record{};
-                        trial_record.trial_number = app.trialnumber;
-                        trial_record.first_pull_id = app.first_pull_id;
-                        trial_record.rewarded = app.rewarded[0] + app.rewarded[1];
-                        trial_record.task_type = app.tasktype;
-                        trial_record.trial_start_time_stamp = app.trial_start_time_forsave;
-                        //  Add to the array of trials.
-                        app.trial_records.push_back(trial_record);
-                        // 
-                        // 
-                        // trial starts #2
-                        app.trialnumber = app.trialnumber + 1;
-                        app.first_pull_id = i + 1;
-                        app.timepoint = 0;
-                        app.trialstart_time = now();
-                        app.trial_start_time_forsave = elapsed_time(app.session_start_time, now());
-                        app.first_pull_time = now();
-                        app.behavior_event = 0; // start of a trial
-                        BehaviorData time_stamps2{};
-                        time_stamps2.trial_number = app.trialnumber;
-                        time_stamps2.time_points = app.timepoint;
-                        time_stamps2.behavior_events = app.behavior_event;
-                        app.behavior_data.push_back(time_stamps2);
-                        //
-                        //app.timepoint = elapsed_time(app.trialstart_time, now());
-                        //app.behavior_event = i + 1; // lever i+1 (1 or 2) is pulled
-                        //app.other_pull_time = elapsed_time(app.first_pull_time, now());
-                        //BehaviorData time_stamps3{};
-                        //time_stamps3.trial_number = app.trialnumber;
-                        //time_stamps3.time_points = app.timepoint;
-                        //time_stamps3.behavior_events = app.behavior_event;
-                        //app.behavior_data.push_back(time_stamps3);
-
-
-
-                    }
-                }
+                
+                // define the start of the new trial
                 else if (lever_read.lever_id == app.first_pull_id) {
-                    // if (app.other_pull_time >= app.pulledtime_thres) {
-                    //  state = 1;
-                    //  entry = true;
-                    //  break;
-                    //}
 
                     // old edition
                     app.first_pull_time = now();
-
-                    // new edition
-                    // trial starts #3
-                    //app.trialnumber = app.trialnumber + 1;
-                    //app.first_pull_id = i + 1;
-                    //app.timepoint = 0;
-                    //app.trialstart_time = now();
-                    //app.trial_start_time_forsave = elapsed_time(app.session_start_time, now());
-                    //app.first_pull_time = now();
-                    //app.behavior_event = 0; // start of a trial
-                    //BehaviorData time_stamps{};
-                    //time_stamps.trial_number = app.trialnumber;
-                    //time_stamps.time_points = app.timepoint;
-                    //time_stamps.behavior_events = app.behavior_event;
-                    //app.behavior_data.push_back(time_stamps);
+                    
                 }
 
             }
@@ -692,18 +616,19 @@ void task_update(App& app) {
                 // save some lever information data
                 LeverReadout lever_read{};
                 lever_read.trial_number = app.trialnumber;
-                lever_read.readout_timepoint = elapsed_time(app.trialstart_time, now());;
-                //lever_read.potentiometer_lever1 = lever_state.value().potentiometer_reading;
-                //lever_read.strain_gauge_lever1 = lever_state.value().strain_gauge;
-                //lever_read.potentiometer_lever2 = lever_state.value().potentiometer_reading;
-                //lever_read.strain_gauge_lever2 = lever_state.value().strain_gauge;
+                lever_read.readout_timepoint = elapsed_time(app.trialstart_time, now());;           
                 lever_read.strain_gauge_lever = lever_state.value().strain_gauge;
                 lever_read.potentiometer_lever = lever_state.value().potentiometer_reading;
                 lever_read.lever_id = i + 1;
                 lever_read.pull_or_release = int(pull_res.pulled_lever);
                 app.lever_readout.push_back(lever_read);
 
+                // end of trial
+                state = 1;
+
             }
+
+             
         }
     }
 
@@ -745,34 +670,7 @@ void task_update(App& app) {
             new_trial.stim0_image = app.debug_image;
             new_trial.stim1_image = app.debug_image;
         }
-        else if (app.tasktype == 3) {
-            //auto buff_p = std::string{ WS_RES_DIR } + "/sounds/start_trial_beep.wav";
-            //app.start_trial_audio_buffer = ws::audio::read_buffer(buff_p.c_str());
-            //auto debug_image_p = std::string{ WS_RES_DIR } + "/images/yellow_circle.png";
-            //app.debug_image = ws::gfx::read_2d_image(debug_image_p.c_str());
-            //
-            new_trial.stim0_image = app.debug_image;
-            new_trial.stim1_image = app.debug_image;
-        }
-        else if (app.tasktype == 4) {
-            //auto buff_p = std::string{ WS_RES_DIR } + "/sounds/start_trial_beep.wav";
-            //app.start_trial_audio_buffer = ws::audio::read_buffer(buff_p.c_str());
-            //
-            new_trial.stim0_image = std::nullopt;
-            new_trial.stim1_image = std::nullopt;
-            new_trial.stim0_color = app.stim0_color;
-            new_trial.stim1_color = app.stim1_color;
-            // if (app.leverpulled[0]) { new_trial.stim0_color = app.stim0_color_disappear; }
-            // if (app.leverpulled[1]) { new_trial.stim1_color = app.stim1_color_disappear; }
-            if (0) {
-                //  Optionally specify an image handle - when this is set, the stim0_color parameter
-                //  is ignored and the image is presented instead.
-                // if (!app.leverpulled[0]) { new_trial.stim0_image = app.debug_image; }
-                // else if (app.leverpulled[0]) { new_trial.stim0_image = {}; new_trial.stim0_color = app.stim0_color_disappear; }
-                // if (!app.leverpulled[1]) { new_trial.stim1_image = app.debug_image; } //  works analogously for the other image. 
-                // else if (app.leverpulled[1]) { new_trial.stim1_image = {}; new_trial.stim1_color = app.stim1_color_disappear; }  
-            }
-        }
+        
 
 
         if (entry && app.allow_automated_juice_delivery) {
@@ -804,7 +702,7 @@ void task_update(App& app) {
         break;
     }
 
-          // save some data
+    // save some data
     case 2: {
 
         TrialRecord trial_record{};
