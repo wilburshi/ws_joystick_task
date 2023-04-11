@@ -250,7 +250,7 @@ void setup(App& app) {
     auto buff_p = std::string{ WS_RES_DIR } + "/sounds/start_trial_beep.wav";
     app.start_trial_audio_buffer = ws::audio::read_buffer(buff_p.c_str());
 
-    auto buff_p1 = std::string{ WS_RES_DIR } + "/sounds/" + app.animal1_name + "_large_juice_beep_"+ std::to_string(app.tasktype) +".wav";
+    auto buff_p1 = std::string{ WS_RES_DIR } + "/sounds/" + app.animal1_name + "_large_juice_beep_"+ std::to_string(app.tasktype) + ".wav";
     app.lever1_large_juice_audio_buffer = ws::audio::read_buffer(buff_p1.c_str());
 
     auto buff_p2 = std::string{ WS_RES_DIR } + "/sounds/" + app.animal1_name + "_small_juice_beep_" + std::to_string(app.tasktype) + ".wav";
