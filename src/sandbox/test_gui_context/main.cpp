@@ -78,13 +78,13 @@ struct App : public ws::App {
 
     // file name
 
-    std::string animal1_name{ "Sparkle" };
-    std::string animal2_name{ "Artemis" };
+    std::string animal1_name{ "S" };
+    std::string animal2_name{ "A" };
 
-    std::string experiment_date{ "20230117" };
+    std::string experiment_date{ "20230411" };
 
 
-    int tasktype{ 2 };
+    int tasktype{ 1 };
     // int tasktype{rand()%2};
 
     // lever force setting condition
