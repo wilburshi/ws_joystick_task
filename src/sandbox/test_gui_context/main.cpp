@@ -78,8 +78,8 @@ struct App : public ws::App {
 
     // file name
 
-    std::string animal1_name{ "S" };
-    std::string animal2_name{ "A" };
+    std::string animal1_name{ "Bilby" };
+    std::string animal2_name{ "Athena" };
 
     std::string experiment_date{ "20230411" };
 
@@ -102,13 +102,13 @@ struct App : public ws::App {
 
     //float new_delay_time{2.0f};
     double new_delay_time{ ws::urand() * 4 + 3 }; //random delay between 3 to 5 s (in unit of second)
-    int animal_delay_time{ 500 }; // from pull animal to unpull animal (in unit of minisecond)
     int juice1_delay_time{ 500 }; // from successful pulling to juice1 delivery (in unit of minisecond)
-    int juice2_delay_time{ 500 }; // from successful pulling to juice2 delivery (in unit of minisecond)
+    int juice2_delay_time{ 750 }; // from juice1 delivery to juice2 delivery (in unit of minisecond) - 1500 for task 1; 750 for task 2
+    float pull_to_deliver_total_time{ 5000.0f }; // unit of ms, the total time from one animal pulls to the delivery of both juices at least 3250ms ~ 500ms animal delay time + 500ms juice 1 delay time + 750ms small juice delivery + 1500ms large juice delivery
 
     // reward amount
-    float large_juice_volume{ 0.2f };
-    float small_juice_volume{ 0.1f };
+    float large_juice_volume{ 0.200f };
+    float small_juice_volume{ 0.100f };
 
     // session threshold
     float new_total_time{ 3600.0f }; // the time for the session (in unit of second)
@@ -139,8 +139,8 @@ struct App : public ws::App {
     // initiate auditory cues
     std::optional<ws::audio::BufferHandle> debug_audio_buffer;
     std::optional<ws::audio::BufferHandle> start_trial_audio_buffer;
-    std::optional<ws::audio::BufferHandle> large_juice_audio_buffer;
-    std::optional<ws::audio::BufferHandle> small_juice_audio_buffer;
+    std::optional<ws::audio::BufferHandle> lever1_large_juice_audio_buffer; // lever2 small juice 
+    std::optional<ws::audio::BufferHandle> lever1_small_juice_audio_buffer; // lever2 large juice 
 
     // initiate stimuli if using colored squares
     ws::Vec2f stim0_size{ 0.2f };
@@ -250,11 +250,11 @@ void setup(App& app) {
     auto buff_p = std::string{ WS_RES_DIR } + "/sounds/start_trial_beep.wav";
     app.start_trial_audio_buffer = ws::audio::read_buffer(buff_p.c_str());
 
-    auto buff_p1 = std::string{ WS_RES_DIR } + "/sounds/large_juice_beep.wav";
-    app.large_juice_audio_buffer = ws::audio::read_buffer(buff_p1.c_str());
+    auto buff_p1 = std::string{ WS_RES_DIR } + "/sounds/" + app.animal1_name + "_large_juice_beep_"+ std::to_string(app.tasktype) +".wav";
+    app.lever1_large_juice_audio_buffer = ws::audio::read_buffer(buff_p1.c_str());
 
-    auto buff_p2 = std::string{ WS_RES_DIR } + "/sounds/small_juice_beep.wav";
-    app.small_juice_audio_buffer = ws::audio::read_buffer(buff_p2.c_str());
+    auto buff_p2 = std::string{ WS_RES_DIR } + "/sounds/" + app.animal1_name + "_small_juice_beep_" + std::to_string(app.tasktype) + ".wav";
+    app.lever1_small_juice_audio_buffer = ws::audio::read_buffer(buff_p2.c_str());
 
     // define the threshold of pulling
     const float dflt_rising_edge = 0.45f;  // 0.6f
@@ -528,11 +528,14 @@ void task_update(App& app) {
                 if (app.tasktype == 1) {
                     // sound cue
                     // the aninal who pulls get large reward
-                    ws::audio::play_buffer_on_channel(app.large_juice_audio_buffer.value(), abs(i - 1), 0.5f);
-                    // the aninal who does not pull get small reward
-                    std::this_thread::sleep_for(std::chrono::milliseconds(app.animal_delay_time));
-                    ws::audio::play_buffer_on_channel(app.small_juice_audio_buffer.value(), abs(i), 0.5f);
-                                      
+                    if (i == 0) {
+                        // ws::audio::play_buffer_on_channel(app.lever1_large_juice_audio_buffer.value(), abs(i - 1), 0.5f
+                        ws::audio::play_buffer_both(app.lever1_large_juice_audio_buffer.value(), 0.5f);
+                    }
+                    else if (i == 1) {
+                        // ws::audio::play_buffer_on_channel(app.lever1_small_juice_audio_buffer.value(), abs(i), 0.5f);
+                        ws::audio::play_buffer_both(app.lever1_small_juice_audio_buffer.value(), 0.5f);
+                    }
                     // juice delivery time       
                     // the aninal who pulls get large reward      
                     // set the reward size - the delivery will happen in (states==1)
@@ -553,10 +556,14 @@ void task_update(App& app) {
                 else if (app.tasktype == 2) {
                     // sound cue
                     // the aninal who pulls get large reward
-                    ws::audio::play_buffer_on_channel(app.small_juice_audio_buffer.value(), abs(i - 1), 0.5f);
-                    // the aninal who does not pull get small reward
-                    std::this_thread::sleep_for(std::chrono::milliseconds(app.animal_delay_time));
-                    ws::audio::play_buffer_on_channel(app.large_juice_audio_buffer.value(), abs(i), 0.5f);
+                    if (i == 1) {
+                        // ws::audio::play_buffer_on_channel(app.lever1_large_juice_audio_buffer.value(), abs(i - 1), 0.5f
+                        ws::audio::play_buffer_both(app.lever1_large_juice_audio_buffer.value(), 0.5f);
+                    }
+                    else if (i == 0) {
+                        // ws::audio::play_buffer_on_channel(app.lever1_small_juice_audio_buffer.value(), abs(i), 0.5f);
+                        ws::audio::play_buffer_both(app.lever1_small_juice_audio_buffer.value(), 0.5f);
+                    }
 
                     // juice delivery time       
                     // the aninal who pulls get large reward      
@@ -669,6 +676,7 @@ void task_update(App& app) {
         std::this_thread::sleep_for(std::chrono::milliseconds(app.juice1_delay_time));
         auto pump_handle1_1 = ws::pump::ith_pump(abs(app.first_pull_id - 1)); // pump id: 0 - pump 1; 1 - pump 2  -WS 
         ws::pump::run_dispense_program(pump_handle1_1);
+        ws::pump::submit_commands();
         app.getreward[app.first_pull_id - 1] = true;
         app.rewarded[app.first_pull_id - 1] = 1;
         //
@@ -680,16 +688,11 @@ void task_update(App& app) {
         time_stamps3.behavior_events = app.behavior_event;
         app.behavior_data.push_back(time_stamps3);
 
-        state = 2;
-
-    }
-
-    case 2: {
-
         // deliver the juice for animal 2
         std::this_thread::sleep_for(std::chrono::milliseconds(app.juice2_delay_time));
         auto pump_handle2_1 = ws::pump::ith_pump(abs(app.first_pull_id - 1 - 1)); // pump id: 0 - pump 1; 1 - pump 2  -WS
         ws::pump::run_dispense_program(pump_handle2_1);
+        ws::pump::submit_commands();
         app.getreward[abs(app.first_pull_id - 1 - 1)] = true;
         app.rewarded[abs(app.first_pull_id - 1 - 1)] = 1;
         //
@@ -699,10 +702,9 @@ void task_update(App& app) {
         time_stamps4.trial_number = app.trialnumber;
         time_stamps4.time_points = app.timepoint;
         time_stamps4.behavior_events = app.behavior_event;
-        app.behavior_data.push_back(time_stamps4);       
+        app.behavior_data.push_back(time_stamps4);
 
-        // 
-        state = 3;
+        state = 2;
         entry = true;
         app.timepoint = elapsed_time(app.trialstart_time, now());
         app.behavior_event = 9; // end of a trial
@@ -714,10 +716,11 @@ void task_update(App& app) {
         app.getreward[0] = false;
         app.getreward[1] = false;
         break;
+
     }
 
     // save some data
-    case 3: {
+    case 2: {
 
         TrialRecord trial_record{};
         trial_record.trial_number = app.trialnumber;
@@ -727,6 +730,7 @@ void task_update(App& app) {
         trial_record.trial_start_time_stamp = app.trial_start_time_forsave;
         //  Add to the array of trials.
         app.trial_records.push_back(trial_record);
+ 
         state = 0;
         entry = true;
         break;
