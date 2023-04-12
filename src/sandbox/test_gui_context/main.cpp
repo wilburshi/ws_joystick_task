@@ -96,7 +96,7 @@ struct App : public ws::App {
 
     // int lever_force_limits[2]{0, 550};
     ws::lever::PullDetect detect_pull[2]{}; // one lever, but treat the two directions as two levers
-    float lever_position_limits[4]{ 27.5e3f, 32e3f, 32e3f, 36.5e3f };  // one lever, but treat the two directions as two levers
+    float lever_position_limits[4]{ 27.7e3f, 32.2e3f, 32.2e3f, 36.7e3f };  // one lever, but treat the two directions as two levers
     bool invert_lever_position[2]{ true, false }; // one lever, but treat the two directions as two levers
 
 
@@ -105,6 +105,7 @@ struct App : public ws::App {
     int juice1_delay_time{ 500 }; // from successful pulling to juice1 delivery (in unit of minisecond)
     int juice2_delay_time{ 750 }; // from juice1 delivery to juice2 delivery (in unit of minisecond) - 1500 for task 1; 750 for task 2
     float pull_to_deliver_total_time{ 5000.0f }; // unit of ms, the total time from one animal pulls to the delivery of both juices at least 3250ms ~ 500ms animal delay time + 500ms juice 1 delay time + 750ms small juice delivery + 1500ms large juice delivery
+    int after_delivery_time{ 1000 }; // from the juice2 delivery to the end of the trial (in unit of minisecond)
 
     // reward amount
     float large_juice_volume{ 0.200f };
@@ -161,6 +162,7 @@ struct App : public ws::App {
     // struct for saving data
     // std::ofstream save_trial_data_file;
 
+    bool dont_save_data{};
     std::vector<TrialRecord> trial_records;
     std::vector<BehaviorData> behavior_data;
     std::vector<SessionInfo> session_info;
@@ -276,30 +278,31 @@ void shutdown(App& app) {
     std::string sessioninfo_name = app.experiment_date + "_" + app.animal1_name + "_" + app.animal2_name + "_session_info_" + postfix + ".json";
     std::string leverread_name = app.experiment_date + "_" + app.animal1_name + "_" + app.animal2_name + "_lever_reading_" + postfix + ".json";
 
+    if (!app.dont_save_data) {
+        std::string file_path1 = std::string{ WS_DATA_DIR } + "/" + trialrecords_name;
+        std::ofstream output_file1(file_path1);
+        output_file1 << to_json(app.trial_records);
 
-    std::string file_path1 = std::string{ WS_DATA_DIR } + "/" + trialrecords_name;
-    std::ofstream output_file1(file_path1);
-    output_file1 << to_json(app.trial_records);
+        std::string file_path2 = std::string{ WS_DATA_DIR } + "/" + bhvdata_name;
+        std::ofstream output_file2(file_path2);
+        output_file2 << to_json(app.behavior_data);
 
-    std::string file_path2 = std::string{ WS_DATA_DIR } + "/" + bhvdata_name;
-    std::ofstream output_file2(file_path2);
-    output_file2 << to_json(app.behavior_data);
+        // save some task information into session_info
+        SessionInfo session_info{};
+        session_info.animal1_name = app.animal1_name;
+        session_info.animal2_name = app.animal2_name;
+        session_info.experiment_date = app.experiment_date;
+        session_info.task_type = app.tasktype;
+        app.session_info.push_back(session_info);
 
-    // save some task information into session_info
-    SessionInfo session_info{};
-    session_info.animal1_name = app.animal1_name;
-    session_info.animal2_name = app.animal2_name;
-    session_info.experiment_date = app.experiment_date;
-    session_info.task_type = app.tasktype;
-    app.session_info.push_back(session_info);
+        std::string file_path3 = std::string{ WS_DATA_DIR } + "/" + sessioninfo_name;
+        std::ofstream output_file3(file_path3);
+        output_file3 << to_json(app.session_info);
 
-    std::string file_path3 = std::string{ WS_DATA_DIR } + "/" + sessioninfo_name;
-    std::ofstream output_file3(file_path3);
-    output_file3 << to_json(app.session_info);
-
-    std::string file_path4 = std::string{ WS_DATA_DIR } + "/" + leverread_name;
-    std::ofstream output_file4(file_path4);
-    output_file4 << to_json(app.lever_readout);
+        std::string file_path4 = std::string{ WS_DATA_DIR } + "/" + leverread_name;
+        std::ofstream output_file4(file_path4);
+        output_file4 << to_json(app.lever_readout);
+    }
 }
 
 
@@ -358,6 +361,11 @@ void render_gui(App& app) {
 
     if (ImGui::Button("pause the trial")) {
         app.start_render = false;
+    }
+
+    bool save_data = !app.dont_save_data;
+    if (ImGui::Checkbox("SaveData", &save_data)) {
+        app.dont_save_data = !save_data;
     }
 
 
@@ -706,6 +714,7 @@ void task_update(App& app) {
 
         state = 2;
         entry = true;
+        std::this_thread::sleep_for(std::chrono::milliseconds(app.after_delivery_time));
         app.timepoint = elapsed_time(app.trialstart_time, now());
         app.behavior_event = 9; // end of a trial
         BehaviorData time_stamps{};
