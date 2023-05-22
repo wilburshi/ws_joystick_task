@@ -46,6 +46,9 @@ struct SessionInfo {
     std::string animal2_name;
     std::string experiment_date;
     int task_type;
+    float large_juice_volume;
+    float small_juice_volume;
+
 };
 
 struct LeverReadout {
@@ -81,7 +84,7 @@ struct App : public ws::App {
     std::string animal1_name{ "Koala" };
     std::string animal2_name{ "Vermelho" };
 
-    std::string experiment_date{ "20230501" };
+    std::string experiment_date{ "20230522" };
 
 
     int tasktype{ 1 }; // 1:competing 2: delimma
@@ -108,7 +111,7 @@ struct App : public ws::App {
     int after_delivery_time{ 1000 }; // from the juice2 delivery to the end of the trial (in unit of minisecond)
 
     // reward amount
-    float large_juice_volume{ 0.200f };
+    float large_juice_volume{ 0.350f };
     float small_juice_volume{ 0.100f };
 
     // session threshold
@@ -215,6 +218,9 @@ json to_json(const SessionInfo& session_info) {
     result["animal2_name"] = session_info.animal2_name;
     result["experiment_date"] = session_info.experiment_date;
     result["task_type"] = session_info.task_type;
+    result["large_reward_volume"] = session_info.large_juice_volume;
+    result["small_reward_volume"] = session_info.small_juice_volume;
+
     return result;
 }
 
@@ -293,6 +299,8 @@ void shutdown(App& app) {
         session_info.animal2_name = app.animal2_name;
         session_info.experiment_date = app.experiment_date;
         session_info.task_type = app.tasktype;
+        session_info.large_juice_volume = app.large_juice_volume;
+        session_info.small_juice_volume = app.small_juice_volume;
         app.session_info.push_back(session_info);
 
         std::string file_path3 = std::string{ WS_DATA_DIR } + "/" + sessioninfo_name;
