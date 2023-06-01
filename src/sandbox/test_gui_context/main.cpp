@@ -81,10 +81,10 @@ struct App : public ws::App {
 
     // file name
 
-    std::string animal1_name{ "Koala" };
-    std::string animal2_name{ "Vermelho" };
+    std::string animal2_name{ "Koala" };
+    std::string animal1_name{ "Vermelho" };
 
-    std::string experiment_date{ "20230522" };
+    std::string experiment_date{ "20230601" };
 
 
     int tasktype{ 1 }; // 1:competing 2: delimma
@@ -106,7 +106,7 @@ struct App : public ws::App {
     //float new_delay_time{2.0f};
     double new_delay_time{ ws::urand() * 4 + 3 }; //random delay between 3 to 5 s (in unit of second)
     int juice1_delay_time{ 500 }; // from successful pulling to juice1 delivery (in unit of minisecond)
-    int juice2_delay_time{ 750 }; // from juice1 delivery to juice2 delivery (in unit of minisecond) - 1500 for task 1; 750 for task 2
+    int juice2_delay_time{ 1500 }; // from juice1 delivery to juice2 delivery (in unit of minisecond) - 1500 for task 1; 750 for task 2
     float pull_to_deliver_total_time{ 5000.0f }; // unit of ms, the total time from one animal pulls to the delivery of both juices at least 3250ms ~ 500ms animal delay time + 500ms juice 1 delay time + 750ms small juice delivery + 1500ms large juice delivery
     int after_delivery_time{ 1000 }; // from the juice2 delivery to the end of the trial (in unit of minisecond)
 
