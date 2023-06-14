@@ -114,8 +114,8 @@ struct App : public ws::App {
     float small_juice_volume{ 0.050f };
 
     // session threshold
-    float new_total_time{ 3600.0f }; // the time for the session (in unit of second)
-    // float new_total_time{ 15.0f }; // the time for the maximal trial time - only used for mutual cooperation condition (task type == 3)
+    // float new_total_time{ 3600.0f }; // the time for the session (in unit of second)
+    float new_total_time{10.0f }; // the time for the maximal trial time - used for the sessions with trial structure
     int total_trial_number{ 500 }; // the maximal trial number of a session
 
 
@@ -462,12 +462,29 @@ void task_update(App& app) {
 
 
         // sound to indicate the start of a session
-        if (app.trialnumber == 0 && start_session_sound) {
-            ws::audio::play_buffer_both(app.start_trial_audio_buffer.value(), 0.5f);
+        if (app.trialnumber == 0) {
             app.session_start_time = now();
+        }
+
+        if (start_session_sound) {
+            ws::audio::play_buffer_both(app.start_trial_audio_buffer.value(), 0.5f); 
             start_session_sound = false;
 
         }
+
+        // trial starts 
+        app.trialnumber = app.trialnumber + 1;
+        app.timepoint = 0;
+        app.trialstart_time = now();
+        app.trial_start_time_forsave = elapsed_time(app.session_start_time, now());
+        app.behavior_event = 0; // start of a trial
+        BehaviorData time_stamps{};
+        time_stamps.trial_number = app.trialnumber;
+        time_stamps.time_points = app.timepoint;
+        time_stamps.behavior_events = app.behavior_event;
+        app.behavior_data.push_back(time_stamps);
+        
+
 
         // end session when trialnumber or total sesison time reach the threshold
         //if (app.trialnumber > app.total_trial_number || elapsed_time(app.session_start_time, now()) > app.new_total_time) {
@@ -496,24 +513,11 @@ void task_update(App& app) {
             auto pull_res = ws::lever::detect_pull(&pd, params);
             if (pull_res.pulled_lever) {
 
-
-                // trial starts # 1
-                // trial starts whenever one of the animal pulls
+                // 
                 if (!app.leverpulled[0] || !app.leverpulled[1]) {
-                    app.trialnumber = app.trialnumber + 1;
                     app.first_pull_id = i + 1;
-                    app.timepoint = 0;
-                    app.trialstart_time = now();
-                    app.trial_start_time_forsave = elapsed_time(app.session_start_time, now());
-                    app.first_pull_time = now();
-                    app.behavior_event = 0; // start of a trial
-                    BehaviorData time_stamps{};
-                    time_stamps.trial_number = app.trialnumber;
-                    time_stamps.time_points = app.timepoint;
-                    time_stamps.behavior_events = app.behavior_event;
-                    app.behavior_data.push_back(time_stamps);
+                    app.first_pull_time = now();                   
                 }
-
 
                 // save some behavioral events data
                 app.timepoint = elapsed_time(app.trialstart_time, now());
@@ -678,7 +682,7 @@ void task_update(App& app) {
 
         auto nt_res = tick_new_trial(&new_trial, &entry);
         if (nt_res.finished) {
-            state = 1;
+            state = 2;
             entry = true;
         }
         break;
