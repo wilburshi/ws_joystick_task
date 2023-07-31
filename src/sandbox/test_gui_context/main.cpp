@@ -46,6 +46,9 @@ struct SessionInfo {
     std::string animal2_name;
     std::string experiment_date;
     int task_type;
+    int task_type_block;
+    int task_type_random;
+    int task_type_blocklength;
     float large_juice_volume;
     float small_juice_volume;
 
@@ -80,13 +83,17 @@ struct App : public ws::App {
     // Some of these variable can be changed accordingly for each session. - Weikang
 
     // file name
-    std::string animal1_name{ "Vermelho" };
-    std::string animal2_name{ "Koala" };
+    std::string animal2_name{ "Vermelho" };
+    std::string animal1_name{ "Koala" };
 
-    std::string experiment_date{ "20230615" };
+    std::string experiment_date{ "20230731" };
 
+    int tasktype_block{ 0 }; // 1: if the tasktype changes as a block by block style
+    int tasktype_random{ 0 }; // 1: if the task type changes trial by trial randomly
+    
+    int block_length{ 15 }; // initiation: the length of the (mini)block, only function if "tasktype_block" or "tasktype_random" is 1
 
-    int tasktype{ 1 }; // 1:competing 2: delimma
+    int tasktype{ 1 }; // initiation; 1:competing 2: delimma 
     // int tasktype{rand()%2};
 
     // lever force setting condition
@@ -105,13 +112,13 @@ struct App : public ws::App {
     //float new_delay_time{2.0f};
     double new_delay_time{ ws::urand() * 4 + 3 }; //random delay between 3 to 5 s (in unit of second)
     int juice1_delay_time{ 500 }; // from successful pulling to juice1 delivery (in unit of minisecond)
-    int juice2_delay_time{ 1500 }; // from juice1 delivery to juice2 delivery (in unit of minisecond) - 1500 for task 1; 750 for task 2
+    int juice2_delay_time{1500 }; // from juice1 delivery to juice2 delivery (in unit of minisecond) - 1500 for task 1; 750 for task 2
     float pull_to_deliver_total_time{ 5000.0f }; // unit of ms, the total time from one animal pulls to the delivery of both juices at least 3250ms ~ 500ms animal delay time + 500ms juice 1 delay time + 750ms small juice delivery + 1500ms large juice delivery
-    int after_delivery_time{ 3000 }; // from the juice2 delivery to the end of the trial (in unit of minisecond)
+    int after_delivery_time{ 5500 }; // from the juice2 delivery to the end of the trial (in unit of minisecond)
 
     // reward amount
-    float large_juice_volume{ 0.300f };
-    float small_juice_volume{ 0.050f };
+    float large_juice_volume{ 0.150f };
+    float small_juice_volume{ 0.020f };
 
     // session threshold
     float new_total_time{ 3600.0f }; // the time for the session (in unit of second)
@@ -141,7 +148,8 @@ struct App : public ws::App {
 
     // initiate auditory cues
     std::optional<ws::audio::BufferHandle> debug_audio_buffer;
-    std::optional<ws::audio::BufferHandle> start_trial_audio_buffer;
+    std::optional<ws::audio::BufferHandle> start_trial_audio_buffer_task1;
+    std::optional<ws::audio::BufferHandle> start_trial_audio_buffer_task2;
     std::optional<ws::audio::BufferHandle> lever1_large_juice_audio_buffer; // lever2 small juice 
     std::optional<ws::audio::BufferHandle> lever1_small_juice_audio_buffer; // lever2 large juice 
 
@@ -254,13 +262,18 @@ json to_json(const std::vector<LeverReadout>& lever_reads) {
 void setup(App& app) {
 
 
-    auto buff_p = std::string{ WS_RES_DIR } + "/sounds/start_trial_beep.wav";
-    app.start_trial_audio_buffer = ws::audio::read_buffer(buff_p.c_str());
+    auto buff_p_task1 = std::string{ WS_RES_DIR } + "/sounds/start_trial_beep_task1.wav";
+    app.start_trial_audio_buffer_task1 = ws::audio::read_buffer(buff_p_task1.c_str());
 
-    auto buff_p1 = std::string{ WS_RES_DIR } + "/sounds/" + app.animal1_name + "_large_juice_beep_" + std::to_string(app.tasktype) + ".wav";
+    auto buff_p_task2 = std::string{ WS_RES_DIR } + "/sounds/start_trial_beep_task2.wav";
+    app.start_trial_audio_buffer_task2 = ws::audio::read_buffer(buff_p_task2.c_str());
+
+    // auto buff_p1 = std::string{ WS_RES_DIR } + "/sounds/" + app.animal1_name + "_large_juice_beep_" + std::to_string(app.tasktype) + ".wav";
+    auto buff_p1 = std::string{ WS_RES_DIR } + "/sounds/" + app.animal1_name + "_large_juice_beep_1.wav";
     app.lever1_large_juice_audio_buffer = ws::audio::read_buffer(buff_p1.c_str());
 
-    auto buff_p2 = std::string{ WS_RES_DIR } + "/sounds/" + app.animal1_name + "_small_juice_beep_" + std::to_string(app.tasktype) + ".wav";
+    //auto buff_p2 = std::string{ WS_RES_DIR } + "/sounds/" + app.animal1_name + "_small_juice_beep_" + std::to_string(app.tasktype) + ".wav";
+    auto buff_p2 = std::string{ WS_RES_DIR } + "/sounds/" + app.animal1_name + "_small_juice_beep_1.wav";
     app.lever1_small_juice_audio_buffer = ws::audio::read_buffer(buff_p2.c_str());
 
     // define the threshold of pulling
@@ -298,6 +311,9 @@ void shutdown(App& app) {
         session_info.animal2_name = app.animal2_name;
         session_info.experiment_date = app.experiment_date;
         session_info.task_type = app.tasktype;
+        session_info.task_type_block = app.tasktype_block;
+        session_info.task_type_random = app.tasktype_random;
+        session_info.task_type_blocklength = app.block_length;
         session_info.large_juice_volume = app.large_juice_volume;
         session_info.small_juice_volume = app.small_juice_volume;
         app.session_info.push_back(session_info);
@@ -448,11 +464,32 @@ void task_update(App& app) {
     // renew for every new trial
     if (entry && state == 0) {
 
-        // only use for trial-by-trial setting
-        // app.tasktype = 1;
-        // app.tasktype = rand()%2; // indicate the task type and different cue color (maybe beep sounds too): 0 no reward; 1 - self; 2 - altruistic (not built yet); 3 - cooperative (not built yet); 4  - for training (one reward for each animal in the cue on period)
-        // app.tasktype = rand()%4; // indicate the task type and different cue color (maybe beep sounds too): 0 no reward; 1 - self; 2 - altruistic (not built yet); 3 - cooperative (not built yet); 4  - for training (one reward for each animal in the cue on period)
-        //
+        if (app.tasktype_random) {
+            app.tasktype = rand() % 2 + 1; // for the trial by trial randomization condition; 1: competition; 2: dilemma
+        }
+        if (app.tasktype_block) {
+            if (!app.tasktype_random) {
+                if (app.trialnumber % app.block_length == 0) {
+                    if (app.tasktype == 1) { app.tasktype = 2; }
+                    if (app.tasktype == 2) { app.tasktype = 1; }
+                }
+            }
+            else if (app.tasktype_random) {
+                app.block_length = app.block_length;
+                if (app.trialnumber % app.block_length == 0) {
+                    if (app.tasktype == 1) { app.tasktype = 2; }
+                    if (app.tasktype == 2) { app.tasktype = 1; }
+                }
+            }
+        }
+
+        if (app.tasktype == 1) {
+            app.juice2_delay_time = 1500;
+        }
+        else if (app.tasktype == 2) {
+            app.juice2_delay_time = 750;
+        }
+
         app.rewarded[0] = 0;
         app.rewarded[1] = 0;
         app.leverpulled[0] = false;
@@ -463,7 +500,12 @@ void task_update(App& app) {
 
         // sound to indicate the start of a TRIAL
         if (start_session_sound) {
-            ws::audio::play_buffer_both(app.start_trial_audio_buffer.value(), 0.5f);
+            if (app.tasktype == 1) {
+                ws::audio::play_buffer_both(app.start_trial_audio_buffer_task1.value(), 0.5f);
+            }
+            else if (app.tasktype == 2) {
+                ws::audio::play_buffer_both(app.start_trial_audio_buffer_task2.value(), 0.5f);
+            }
             start_session_sound = true;
         }
         // get the session start time
