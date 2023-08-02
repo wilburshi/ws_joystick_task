@@ -83,17 +83,17 @@ struct App : public ws::App {
     // Some of these variable can be changed accordingly for each session. - Weikang
 
     // file name
-    std::string animal2_name{ "Vermelho" };
-    std::string animal1_name{ "Koala" };
+    std::string animal1_name{ "Vermelho" };
+    std::string animal2_name{ "Koala" };
 
-    std::string experiment_date{ "20230731" };
+    std::string experiment_date{ "20230802" };
 
-    int tasktype_block{ 0 }; // 1: if the tasktype changes as a block by block style
+    int tasktype_block{ 1 }; // 1: if the tasktype changes as a block by block style
     int tasktype_random{ 0 }; // 1: if the task type changes trial by trial randomly
     
     int block_length{ 15 }; // initiation: the length of the (mini)block, only function if "tasktype_block" or "tasktype_random" is 1
 
-    int tasktype{ 1 }; // initiation; 1:competing 2: delimma 
+    int tasktype{ 2 }; // initiation; 1:competing 2: delimma 
     // int tasktype{rand()%2};
 
     // lever force setting condition
@@ -225,6 +225,9 @@ json to_json(const SessionInfo& session_info) {
     result["animal2_name"] = session_info.animal2_name;
     result["experiment_date"] = session_info.experiment_date;
     result["task_type"] = session_info.task_type;
+    result["tasktype_block"] = session_info.task_type_block;
+    result["tasktype_random"] = session_info.task_type_random;
+    result["tasktype_blocklength"] = session_info.task_type_blocklength;
     result["large_reward_volume"] = session_info.large_juice_volume;
     result["small_reward_volume"] = session_info.small_juice_volume;
 
@@ -469,16 +472,16 @@ void task_update(App& app) {
         }
         if (app.tasktype_block) {
             if (!app.tasktype_random) {
-                if (app.trialnumber % app.block_length == 0) {
+                if ((app.trialnumber % app.block_length) == 0) {
                     if (app.tasktype == 1) { app.tasktype = 2; }
-                    if (app.tasktype == 2) { app.tasktype = 1; }
+                    else if (app.tasktype == 2) { app.tasktype = 1; }
                 }
             }
             else if (app.tasktype_random) {
                 app.block_length = app.block_length;
                 if (app.trialnumber % app.block_length == 0) {
                     if (app.tasktype == 1) { app.tasktype = 2; }
-                    if (app.tasktype == 2) { app.tasktype = 1; }
+                    else if (app.tasktype == 2) { app.tasktype = 1; }
                 }
             }
         }
